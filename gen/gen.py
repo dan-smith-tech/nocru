@@ -66,7 +66,7 @@ def generate_image(img_height, img_width, noise_scale):
         sentence = re.sub('[^\u0020-\u007E0-9\u00A0-\u00FF$¢£¤¥₣₤₧₪₫€₹₽₿!?]', "", sentence)
 
         try:
-            font = ImageFont.truetype(random.choice(os.listdir("fonts/")), np.random.randint(30, 151))
+            font = ImageFont.truetype(random.choice(os.listdir("fonts/")), np.random.randint(65, 151))
             left, top, x_height, y_height = draw.multiline_textbbox((0, 0), sentence, font=font)
             x_height = left + x_height
             y_height = top + y_height
@@ -76,7 +76,7 @@ def generate_image(img_height, img_width, noise_scale):
             if no_collision_check(new_box, text_boxes) and oob_check(new_box, img_height, img_width):
                 a, b = random.sample([0, 255], 2)
                 draw.text((new_box.x, new_box.y), new_box.text, font=new_box.font, fill=a,
-                          stroke_width=random.choice([0, 10]), stroke_fill=b)
+                          stroke_width=random.choice([2, 6]), stroke_fill=b)
                 text_boxes.append(new_box)
                 count += 1
             else:
