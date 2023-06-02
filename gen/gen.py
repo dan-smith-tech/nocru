@@ -38,17 +38,17 @@ def oob_check(test_box, img_height, img_width):
         return False
 
 
-def generate_image(img_height, img_width):
+def generate_image(img_height, img_width, noise_scale):
     """
     Generates an image with random text and a noise background.
 
     :param img_height: height of the image in pixels
     :param img_width: width of the image in pixels
+    :param noise_scale: scale of perlin noise pattern (smaller is more zoomed in,must be multiples of respective axes)
     :return: the generated image
     """
 
-    div = np.random.randint(30, 51)
-    noise = (generate_perlin_noise_2d((img_height, img_width), (img_height / div, img_width / div)) * 255).astype(np.uint8)
+    noise = (generate_perlin_noise_2d((img_height, img_width), noise_scale) * 255).astype(np.uint8)
 
     img = Image.fromarray(noise)
     draw = ImageDraw.Draw(img)
@@ -94,6 +94,6 @@ if __name__ == "__main__":
     totalCount = 0
 
     while totalCount < number:
-        new_img = generate_image(1080, 1920)
+        new_img = generate_image(1080, 1920, (27, 48))
         new_img.show()
         totalCount += 1
