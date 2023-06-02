@@ -1,84 +1,83 @@
-import numpy as np
-import os, random, re
-from PIL import Image, ImageDraw, ImageFont
-from perlin_numpy import (
-    generate_fractal_noise_2d, generate_fractal_noise_3d,
-    generate_perlin_noise_2d, generate_perlin_noise_3d
-)
+from perlin_numpy import generate_fractal_noise_2d, generate_perlin_noise_2d
 from essential_generators import DocumentGenerator
+from PIL import Image, ImageDraw, ImageFont
+import numpy as np
+import random
+import re
+import os
 
-class textBox(object):
-    def __init__(self, text="", x = 0, y = 0, xH = 0, yH = 0, textFont = ""):
+
+class TextBox(object):
+    def __init__(self, text="", x=0, y=0, x_height=0, y_height=0, font=""):
         self.text = text
         self.x = x
         self.y = y
-        self.xH = xH
-        self.yH = yH
-        self.textFont = textFont
+        self.x_height = x_height
+        self.y_height = y_height
+        self.font = font
 
-def notCollisionCheck(testBox):
-    if (not texts):
+
+def no_collision_check(test_box, text_boxes):
+    if not text_boxes:
         return True
     else:
-        for compBox in texts:
-            if(testBox.x < compBox.x + compBox.xH and
-            testBox.x + testBox.xH > compBox.x and
-            testBox.y < compBox.y + compBox.yH and
-            testBox.y + testBox.yH > compBox.y):
+        for compBox in text_boxes:
+            if (test_box.x < compBox.x + compBox.x_height and
+                    test_box.x + test_box.x_height > compBox.x and
+                    test_box.y < compBox.y + compBox.y_height and
+                    test_box.y + test_box.y_height > compBox.y):
                 return False
         return True
 
-def OOBcheck(testBox):
-    if (testBox.y + testBox.yH < imgY and
-        testBox.x + testBox.xH < imgX):
+
+def oob_check(test_box, img_height, img_width):
+    if (test_box.y + test_box.y_height < img_height and
+            test_box.x + test_box.x_height < img_width):
         return True
     else:
         return False
 
-imgX = 1920
-imgY = 1080
 
-# # white noise
-# rng = np.random.default_rng()
-# rints = rng.integers(low=0, high=257, size=(1080, 1920))
+def generate_image(img_height, img_width, noise_scale):
+    """
+    Generates an image with random text and a noise background.
 
-# # rints = np.random.randint(0, 257, size=(1080, 1920, 3))
-# rints = (rints * 255).astype(np.uint8)
+    :param img_height: height of the image in pixels
+    :param img_width: width of the image in pixels
+    :param noise_scale: scale of perlin noise pattern (smaller is more zoomed in,must be multiples of respective axes)
+    :return: the generated image
+    """
 
-print("number of products to make:")
-number = int(input())
-totalCount = 0
+    noise = (generate_perlin_noise_2d((img_height, img_width), noise_scale) * 255).astype(np.uint8)
 
-while totalCount < number:
-    np.random.seed(0)
-    # makes background image. last two numbers define scale of pattern. smaller is more zoomed in. must be multiples of respective axes
-    # rints = generate_perlin_noise_2d((imgY, imgX), (108, 192))
-    rints = generate_perlin_noise_2d((imgY, imgX), (27, 48))
-    rints = (rints * 255).astype(np.uint8)
-
-    img = Image.fromarray(rints)
+    img = Image.fromarray(noise)
     draw = ImageDraw.Draw(img)
 
     gen = DocumentGenerator()
-    # number of lines to place around the image. max exclusive, min inclusive
+    # number of lines to place around the image (max exclusive, min inclusive)
     ceil = np.random.randint(1, 21)
     count = 0
-    texts = []
+    text_boxes = []
+
     while count < ceil:
         sentence = gen.sentence()
         sentence = sentence.replace("–", "-").replace("—", "-").replace("−", "-")
         sentence = re.sub('[\s]+', " ", sentence)
         sentence = re.sub('[^\u0020-\u007E0-9\u00A0-\u00FF$¢£¤¥₣₤₧₪₫€₹₽₿!?]', "", sentence)
+
         try:
-            textFont = ImageFont.truetype(random.choice(os.listdir("fonts/")), np.random.randint(30, 151))
-            l, t, xH, yH = draw.multiline_textbbox((0,0), sentence, font=textFont)
-            xH = l + xH
-            yH = t + yH
-            newBox = textBox(sentence, np.random.randint(0, imgX), np.random.randint(0, imgY), xH, yH, textFont)
-            if(notCollisionCheck(newBox) and OOBcheck(newBox)):
+            font = ImageFont.truetype(random.choice(os.listdir("fonts/")), np.random.randint(30, 151))
+            left, top, x_height, y_height = draw.multiline_textbbox((0, 0), sentence, font=font)
+            x_height = left + x_height
+            y_height = top + y_height
+            new_box = TextBox(sentence, np.random.randint(0, img_width), np.random.randint(0, img_height), x_height,
+                              y_height, font)
+
+            if no_collision_check(new_box, text_boxes) and oob_check(new_box, img_height, img_width):
                 a, b = random.sample([0, 255], 2)
-                draw.text((newBox.x, newBox.y), newBox.text, font=newBox.textFont, fill=a, stroke_width=random.choice([0, 10]), stroke_fill=b)
-                texts.append(newBox)
+                draw.text((new_box.x, new_box.y), new_box.text, font=new_box.font, fill=a,
+                          stroke_width=random.choice([0, 10]), stroke_fill=b)
+                text_boxes.append(new_box)
                 count += 1
             else:
                 print("Colliding with existing, skipping")
@@ -86,6 +85,15 @@ while totalCount < number:
             print("Skipping due to encoding error")
             print(sentence)
 
-    # img.show()
-    img.save("output/" + str(totalCount) + ".png")
-    totalCount += 1
+    return img
+
+
+if __name__ == "__main__":
+    print("Number of images to generate:")
+    number = int(input())
+    totalCount = 0
+
+    while totalCount < number:
+        new_img = generate_image(1080, 1920, (27, 48))
+        new_img.show()
+        totalCount += 1
