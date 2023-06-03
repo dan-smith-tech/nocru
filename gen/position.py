@@ -25,7 +25,7 @@ def get_minkowski_bounds(box, collider):
                 collider.width + box.width,
                 collider.height + box.height)
 
-
+# not needed imo
 def get_image_bound_colliders(new_text_box, img_size):
     """
     Gets the boxes where a new text box's anchors cannot be placed.
@@ -37,7 +37,7 @@ def get_image_bound_colliders(new_text_box, img_size):
 
     pass
 
-
+# not needed imo
 def get_valid_bounds(existing_text_boxes, img_size):
     """
     Divide and conquer to find all boxes outside the colliders:
@@ -50,6 +50,16 @@ def get_valid_bounds(existing_text_boxes, img_size):
 
     pass
 
+def minkowski_overlap_fix(colliders):
+    """
+    Fixes overlapping boxes, somehow.
+    !!will not work by simply reducing size on axis - think about corner overlaps. will have to create additional rects probably?
+    :param colliders: a list of input minkowski'd colliders that may overlap
+    :return: a list of colliders that no longer overlap but cover the same area
+    """
+
+    return colliders
+
 
 def get_text_position(new_text_box, existing_text_boxes, img_size):
     """
@@ -61,31 +71,34 @@ def get_text_position(new_text_box, existing_text_boxes, img_size):
     :return: the position (y, x) of the text box
     """
 
-    colliders = np.empty((len(existing_text_boxes) + 2))
+    # colliders = np.empty((len(existing_text_boxes) + 2))
 
     # get minkowski bounds for existing text boxes and image size store in colliders
     # overlap may occur after minkowski. CAUSES ISSUES IN DIVCONQ
+    # no anchor conversion needed, pillow now set to use topleft anchor. is only ever a couple of pixels out on the x axis, negligible therefore ignoring
+    colliders = []
+    for box in existing_text_boxes:
+        colliders.append(get_minkowski_bounds(new_text_box, Rect(box.x, box.y, box.width, box.height)))
+    # add rightmost and bottommost minkowski bounds
+    colliders.append(Rect(img_size.width - new_text_box.width, 0, new_text_box.width, img_size.height))
+    colliders.append(Rect(0, img_size.height - new_text_box.height, img_size.width, new_text_box.height))
+
+    colliders = minkowski_overlap_fix(colliders)
 
     # divide and conquer to find all possible valid points
-
+    valid_rects = split_rectangles(Rect(0, 0, img_size.width, img_size.height), colliders)
     # pick a random valid Rect, and a random position inside that Rect, and return
-    # !! dont forget to check for edgecase where no valid positions exist. dont forget to add l and t values to resultant anchor point before return in order to convert from absolute anchor to pillow anchor
+    # !! dont forget to check for edgecase where no valid positions exist
+    chosen = random.choice(valid_rects)
+    return np.random.randint(chosen.y, (chosen.y + chosen.height) + 1), np.random.randint(chosen.x, (chosen.x + chosen.width) + 1)
 
-
-# div and conq crap
-# conversion like so:
-# x1 = x
-# y1 = y
-# x2 = x + width
-# y2 = y + height
-# Rectangle = Rect
-
+# div and conq crap from hereon out
 # !! must fix for overlap possibility !! either here or in minkowski (probably here)
 
 def intersects(b, r):
     return b.x < r.x + r.width and b.x + b.width > r.x and b.y < r.y + r.height and b.y + b.height > r.y
 
-# custom min thing to adujust for relative anchor and not absolute
+# custom min thing to adjust for relative anchor and not absolute
 def custom_minW(b, r):
     if (min(b.x + b.width, r.x + r.width) == b.x + b.width):
         return b.width

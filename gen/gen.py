@@ -10,12 +10,12 @@ from position import get_text_position
 
 
 class TextBox(object):
-    def __init__(self, text="", x=0, y=0, x_height=0, y_height=0, font=""):
+    def __init__(self, text="", x=0, y=0, width=0, height=0, font=""):
         self.text = text
         self.x = x
         self.y = y
-        self.x_height = x_height
-        self.y_height = y_height
+        self.width = width
+        self.height = height
         self.font = font
 
 
@@ -24,17 +24,17 @@ def no_collision_check(test_box, text_boxes):
         return True
     else:
         for compBox in text_boxes:
-            if (test_box.x < compBox.x + compBox.x_height and
-                    test_box.x + test_box.x_height > compBox.x and
-                    test_box.y < compBox.y + compBox.y_height and
-                    test_box.y + test_box.y_height > compBox.y):
+            if (test_box.x < compBox.x + compBox.width and
+                    test_box.x + test_box.width > compBox.x and
+                    test_box.y < compBox.y + compBox.height and
+                    test_box.y + test_box.height > compBox.y):
                 return False
         return True
 
 
 def oob_check(test_box, img_height, img_width):
-    if (test_box.y + test_box.y_height < img_height and
-            test_box.x + test_box.x_height < img_width):
+    if (test_box.y + test_box.height < img_height and
+            test_box.x + test_box.width < img_width):
         return True
     else:
         return False
@@ -67,28 +67,30 @@ def generate_image(img_height, img_width, noise_scale):
         sentence = re.sub('[\s]+', " ", sentence)
         sentence = re.sub('[^\u0020-\u007E0-9\u00A0-\u00FF$¢£¤¥₣₤₧₪₫€₹₽₿!?]', "", sentence)
 
-        try:
-            font = ImageFont.truetype(random.choice(os.listdir("fonts/")), np.random.randint(65, 151))
-            left, top, x_height, y_height = draw.multiline_textbbox((0, 0), sentence, font=font)
-            x_height = left + x_height
-            y_height = top + y_height
-            new_box = TextBox(sentence, np.random.randint(0, img_width), np.random.randint(0, img_height), x_height,
-                              y_height, font)
+        # try:
+        font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(65, 151))
+        left, top, width, height = draw.textbbox((0, 0), sentence, font=font, anchor="lt")
+        # width = left + width
+        # height = top + height
+        print(left)
+        print(top)
+        new_box = TextBox(sentence, np.random.randint(0, img_width), np.random.randint(0, img_height), width,
+                            height, font)
 
-            position = get_text_position((new_box.x, new_box.y, new_box.x_height, new_box.y_height), [],
-                                         (img_height, img_width))
+        # position = get_text_position((new_box.x, new_box.y, new_box.width, new_box.height), [],
+        #                              (img_height, img_width))
 
-            if no_collision_check(new_box, text_boxes) and oob_check(new_box, img_height, img_width):
-                a, b = random.sample([0, 255], 2)
-                draw.text((new_box.x, new_box.y), new_box.text, font=new_box.font, fill=a,
-                          stroke_width=random.choice([2, 6]), stroke_fill=b)
-                text_boxes.append(new_box)
-                count += 1
-            else:
-                print("Colliding with existing, skipping")
-        except:
-            print("Skipping due to encoding error")
-            print(sentence)
+        if no_collision_check(new_box, text_boxes) and oob_check(new_box, img_height, img_width):
+            a, b = random.sample([0, 255], 2)
+            draw.text((new_box.x, new_box.y), new_box.text, font=new_box.font, fill=a,
+                        stroke_width=random.choice([2, 6]), stroke_fill=b)
+            text_boxes.append(new_box)
+            count += 1
+        else:
+            print("Colliding with existing, skipping")
+        # except:
+        #     print("Skipping due to encoding error")
+        #     print(sentence)
 
     return img
 
