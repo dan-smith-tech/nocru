@@ -6,6 +6,8 @@ import random
 import re
 import os
 
+from position import get_text_position
+
 
 class TextBox(object):
     def __init__(self, text="", x=0, y=0, x_height=0, y_height=0, font=""):
@@ -72,6 +74,9 @@ def generate_image(img_height, img_width, noise_scale):
             y_height = top + y_height
             new_box = TextBox(sentence, np.random.randint(0, img_width), np.random.randint(0, img_height), x_height,
                               y_height, font)
+
+            position = get_text_position((new_box.x, new_box.y, new_box.x_height, new_box.y_height), [],
+                                         (img_height, img_width))
 
             if no_collision_check(new_box, text_boxes) and oob_check(new_box, img_height, img_width):
                 a, b = random.sample([0, 255], 2)
