@@ -14,7 +14,7 @@ class Rect:
         self.height = height
 
 
-def get_minkowski_bounds(box, collider):
+def get_minkowski_bounds(box, collider, img_size):
     """
     Gets the entire bounding area of a collider.
 
@@ -23,10 +23,21 @@ def get_minkowski_bounds(box, collider):
     :return: a Rect for the bounding area of the collider
     """
 
-    return Rect(collider.x - box.width,
+    rect = Rect(collider.x - box.width,
                 collider.y - box.height,
                 collider.width + box.width,
                 collider.height + box.height)
+
+    if rect.x < 0:
+        rect.x = 0
+    if rect.y < 0:
+        rect.y = 0
+    if rect.width > img_size.width:
+        rect.width = img_size.width
+    if rect.height > img_size.height:
+        rect.height = img_size.width
+
+    return rect
 
 
 def get_collision_bounds(new_text_box, existing_text_boxes, img_size):
@@ -36,13 +47,79 @@ def get_collision_bounds(new_text_box, existing_text_boxes, img_size):
     # overlap may occur after minkowski. CAUSES ISSUES IN DIVCONQ
     # no anchor conversion needed, pillow now set to use topleft anchor. is only ever a couple of pixels out on the x axis, negligible therefore ignoring
     for box in existing_text_boxes:
-        colliders.append(get_minkowski_bounds(new_text_box, box))
+        colliders.append(get_minkowski_bounds(new_text_box, box, img_size))
     # add rightmost and bottommost minkowski bounds
-    # colliders.append(Rect(img_size.width - new_text_box.width, 0, new_text_box.width, img_size.height))
-    # colliders.append(Rect(0, img_size.height - new_text_box.height, img_size.width,
-    #                       new_text_box.height))
-
-    return colliders
+    colliders.append(Rect(img_size.width - new_text_box.width, 0, new_text_box.width, img_size.height))
+    colliders.append(Rect(0, img_size.height - new_text_box.height, img_size.width,
+                          new_text_box.height))
+    
+    # overlap fixer
+    # yes i put it here even though it totally should be a different method
+    colliders1 = convert_to_absolute(colliders)
+    for col1 in colliders1:
+        for col2 in colliders1:
+            if (col1 != col2):
+                if (intersects(col1, col2)):
+                    # is completely enclosed
+                    if (col1.x1 > col2.x1 and col1.x2 < col2.x2 and col1.y1 > col2.y1 and col1.y2 < col2.y2):
+                        print("trigger enclosed")
+                        colliders1.remove(col1)
+                    # side-overlap right
+                    elif (col2.x1 <= col1.x1 <= col2.x2 and col1.x2 > col2.x2):
+                        print("trigger right")
+                        new = Rectangle(col2.x2, col1.y1, col1.x2, col1.y2)
+                        # corner overlaps right
+                        if (col1.y1 < col2.y1):
+                            print("trigger right top")
+                            new2 = Rectangle(col1.x1, col1.y1, col2.x2, col2.y1)
+                            colliders1.append(new2)
+                        elif (col1.y2 > col2.y2):
+                            print("trigger right bottom")
+                            new2 = Rectangle(col1.x1, col2.y2, col2.x2, col1.y2)
+                            colliders1.append(new2)
+                        colliders1.remove(col1)
+                        colliders1.append(new)
+                    # side-overlap left
+                    elif (col2.x1 < col1.x2 < col2.x2 and col1.x1 < col2.x1):
+                        print("trigger left")
+                        new = Rectangle(col1.x1, col1.y1, col2.x1, col1.y2)
+                        # corner overlaps left
+                        if (col1.y1 < col2.y1):
+                            print("trigger left top")
+                            new2 = Rectangle(col2.x1, col1.y1, col1.x2, col2.y1)
+                            colliders1.append(new2)
+                        elif (col1.y2 > col2.y2):
+                            print("trigger left bottom")
+                            new2 = Rectangle(col2.x1, col2.y2, col1.x2, col1.y2)
+                            colliders1.append(new2)
+                        colliders1.remove(col1)
+                        colliders1.append(new)
+                    # +-type overlap
+                    elif (col1.x1 < col2.x1 and col1.x2 > col2.x2 and col1.y1 > col2.y1 and col1.y2 < col2.y2):
+                        print("trigger +")
+                        new0 = Rectangle(col1.x1, col1.y1, col2.x1, col1.y2)
+                        new1 = Rectangle(col2.x2, col1.y1, col1.x2, col1.y2)
+                        colliders1.remove(col1)
+                        colliders1.append(new0)
+                        colliders1.append(new1)
+                    # top overlap
+                    elif (col1.x1 >= col2.x1 and col1.x2 <= col2.x2 and col1.y1 <= col2.y1 and col1.y2 >= col2.y1):
+                        print("trigger top")
+                        new = Rectangle(col1.x1, col1.y1, col1.x2, col2.y1)
+                        colliders1.remove(col1)
+                        colliders1.append(new)
+                    # bottom overlap
+                    elif (col1.x1 >= col2.x1 and col1.x2 <= col2.x2 and col1.y1 >= col2.y1 and col1.y2 >= col2.y2):
+                        print("trigger bottom")
+                        new = Rectangle(col1.x1, col2.y2, col1.x2, col1.y2)
+                        colliders1.remove(col1)
+                        colliders1.append(new)
+                    else:
+                        print("!!!unaccounted overlap, might cause issues!!!")
+                        print("col1 = " + str(col1.x1) + " " + str(col1.y1) + " " + str(col1.x2) + " " + str(col1.y2))
+                        print("col2 = " + str(col2.x1) + " " + str(col2.y1) + " " + str(col2.x2) + " " + str(col2.y2))
+    colliders2 = convert_to_relative(colliders1)
+    return colliders2
 
 
 def intersects(b, r):
@@ -77,62 +154,6 @@ def split_rectangles(b, rects):
         yield from split_rectangles(right, clip_rects(right, rects))
         yield from split_rectangles(below, clip_rects(below, rects))
 
-
-# def intersects(b, r):
-#     return b.x < (r.x + r.width) and (b.x + b.width) > r.x and b.y < (r.y + r.height) and (b.y + b.height) > r.y
-
-
-# # custom min thing to adjust for relative anchor and not absolute
-# def custom_minW(b, r):
-#     if (min(b.x + b.width, r.x + r.width) == b.x + b.width):
-#         return b.width
-#     else:
-#         return r.width
-
-
-# def custom_minH(b, r):
-#     if (min(b.y + b.height, r.y + r.height) == b.y + b.height):
-#         return b.height
-#     else:
-#         return r.height
-
-
-# def clip_rect(b, r):
-#     return Rect(
-#         max(b.x, r.x), max(b.y, r.y),
-#         # custom_minW(b, r), custom_minH(b, r)
-#         min((b.x + b.width), (r.x + r.width)), min((b.y + b.height), (r.y + r.height))
-#     )
-
-
-# def clip_rects(b, rects):
-#     return [clip_rect(b, r) for r in rects if intersects(b, r)]
-
-
-# def get_valid_bounds(rects, b):
-#     if b.x >= (b.x + b.width) or b.y >= (b.y + b.height):
-#         pass
-#         print("TRIGGER")
-#     elif not rects:
-#         yield b
-#     else:
-#         # randomize to avoid O(n^2) runtime in typical cases
-#         # change this if deterministic behaviour is required
-#         pivot = random.choice(rects)
-#         # print("pivot is " + str(pivot.x), str(pivot.y), str(pivot.width), str(pivot.height))
-#         # print("b is " + str(b.x), str(b.y), str(b.width), str(b.height))
-
-#         above = Rect(b.x, b.y, b.x + b.width, pivot.y)
-#         left = Rect(b.x, pivot.y, pivot.x, pivot.y + pivot.height)
-#         right = Rect(pivot.x + pivot.width, pivot.y, b.x + b.width, pivot.y + pivot.height)
-#         below = Rect(b.x, pivot.y + pivot.height, b.x + b.width, b.y + b.height)
-
-#         yield from get_valid_bounds(clip_rects(above, rects), above)
-#         yield from get_valid_bounds(clip_rects(left, rects), left)
-#         yield from get_valid_bounds(clip_rects(right, rects), right)
-#         yield from get_valid_bounds(clip_rects(below, rects), below)
-
-
 def draw_boxes(sections, colliders, img_size, new_text_box=None):
     img = Image.new("RGB", img_size)
     # only need to call draw once
@@ -154,6 +175,17 @@ def draw_boxes(sections, colliders, img_size, new_text_box=None):
 
     img.show()
 
+def convert_to_absolute(rects):
+    rects1 = []
+    for col in rects:
+        rects1.append(Rectangle(col.x, col.y, col.x + col.width, col.y + col.height))
+    return rects1
+
+def convert_to_relative(rects):
+    rects1 = []
+    for val in rects:
+        rects1.append(Rect(val.x1, val.y1, val.x2 - val.x1, val.y2 - val.y1))
+    return rects1
 
 def get_text_position(new_text_box_size, existing_text_boxes_pos, img_size, draw=False):
     """
@@ -167,7 +199,6 @@ def get_text_position(new_text_box_size, existing_text_boxes_pos, img_size, draw
     """
 
     new_text_box = Rect(0, 0, new_text_box_size[0], new_text_box_size[1])
-    # existing_text_boxes = [Rect(box[0], box[1], box[2], box[3]) for box in existing_text_boxes_pos]
     existing_text_boxes = existing_text_boxes_pos
     img_bounds = Rect(0, 0, img_size[0], img_size[1])
 
@@ -177,18 +208,10 @@ def get_text_position(new_text_box_size, existing_text_boxes_pos, img_size, draw
         print(c.x, c.y, c.width, c.height)
     print(img_bounds.x, img_bounds.y, img_bounds.width, img_bounds.height, end="\n----------------\n")
 
-    # for thing in get_valid_bounds(colliders, img_bounds):
-    #     print(thing.x, thing.y, thing.width, thing.height)
-
-    # valid_rects = list(get_valid_bounds(colliders, img_bounds))
-    colliders1 = []
-    for col in colliders:
-        colliders1.append(Rectangle(col.x, col.y, col.x + col.width, col.y + col.height))
+    colliders1 = convert_to_absolute(colliders)
     valid_rects1 = list(split_rectangles(Rectangle(img_bounds.x, img_bounds.y, img_bounds.width, img_bounds.height), colliders1))
 
-    valid_rects = []
-    for val in valid_rects1:
-        valid_rects.append(Rect(val.x1, val.y1, val.x2 - val.x1, val.y2 - val.y1))
+    valid_rects = convert_to_relative(valid_rects1)
 
     if len(valid_rects) > 0:
         chosen = random.choice(valid_rects)
