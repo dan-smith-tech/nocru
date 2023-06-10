@@ -44,7 +44,7 @@ def get_collision_bounds(new_text_box, existing_text_boxes, img_size):
     colliders = []
 
     # get minkowski bounds for existing text boxes and image size store in colliders
-    # overlap may occur after minkowski. CAUSES ISSUES IN DIVCONQ
+    # overlap may occur after minkowski.
     # no anchor conversion needed, pillow now set to use topleft anchor. is only ever a couple of pixels out on the x axis, negligible therefore ignoring
     for box in existing_text_boxes:
         colliders.append(get_minkowski_bounds(new_text_box, box, img_size))

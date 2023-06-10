@@ -84,6 +84,11 @@ def generate_image(img_height, img_width, noise_scale):
             a, b = random.sample([0, 255], 2)
             draw.text((new_box.x, new_box.y), new_box.text, font=new_box.font, fill=a,
                         stroke_width=random.choice([2, 6]), stroke_fill=b)
+            if (np.random.randint(0, 2)):
+                offset = np.random.randint(0, 20)
+                cutter = TextBox("if you're seeing this, something has gone terribly wrong.", new_box.x - offset, (new_box.y + new_box.height) - np.random.randint(0, 5), new_box.width + offset + np.random.randint(0, 20), np.random.randint(10, 50), new_box.font)
+                draw.rectangle([cutter.x, cutter.y, cutter.x + cutter.width, cutter.y + cutter.height], fill=random.choice(["black", "white"]), outline=None, width=1)
+                text_boxes.append(cutter)
             text_boxes.append(new_box)
             count += 1
         else:
