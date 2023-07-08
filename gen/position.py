@@ -62,41 +62,41 @@ def get_collision_bounds(new_text_box, existing_text_boxes, img_size):
                 if (intersects(col1, col2)):
                     # is completely enclosed
                     if (col1.x1 > col2.x1 and col1.x2 < col2.x2 and col1.y1 > col2.y1 and col1.y2 < col2.y2):
-                        print("trigger enclosed")
+                        # print("trigger enclosed")
                         colliders1.remove(col1)
                     # side-overlap right
                     elif (col2.x1 <= col1.x1 <= col2.x2 and col1.x2 > col2.x2):
-                        print("trigger right")
+                        # print("trigger right")
                         new = Rectangle(col2.x2, col1.y1, col1.x2, col1.y2)
                         # corner overlaps right
                         if (col1.y1 < col2.y1):
-                            print("trigger right top")
+                            # print("trigger right top")
                             new2 = Rectangle(col1.x1, col1.y1, col2.x2, col2.y1)
                             colliders1.append(new2)
                         elif (col1.y2 > col2.y2):
-                            print("trigger right bottom")
+                            # print("trigger right bottom")
                             new2 = Rectangle(col1.x1, col2.y2, col2.x2, col1.y2)
                             colliders1.append(new2)
                         colliders1.remove(col1)
                         colliders1.append(new)
                     # side-overlap left
                     elif (col2.x1 < col1.x2 < col2.x2 and col1.x1 < col2.x1):
-                        print("trigger left")
+                        # print("trigger left")
                         new = Rectangle(col1.x1, col1.y1, col2.x1, col1.y2)
                         # corner overlaps left
                         if (col1.y1 < col2.y1):
-                            print("trigger left top")
+                            # print("trigger left top")
                             new2 = Rectangle(col2.x1, col1.y1, col1.x2, col2.y1)
                             colliders1.append(new2)
                         elif (col1.y2 > col2.y2):
-                            print("trigger left bottom")
+                            # print("trigger left bottom")
                             new2 = Rectangle(col2.x1, col2.y2, col1.x2, col1.y2)
                             colliders1.append(new2)
                         colliders1.remove(col1)
                         colliders1.append(new)
                     # +-type overlap
                     elif (col1.x1 < col2.x1 and col1.x2 > col2.x2 and col1.y1 > col2.y1 and col1.y2 < col2.y2):
-                        print("trigger +")
+                        # print("trigger +")
                         new0 = Rectangle(col1.x1, col1.y1, col2.x1, col1.y2)
                         new1 = Rectangle(col2.x2, col1.y1, col1.x2, col1.y2)
                         colliders1.remove(col1)
@@ -104,20 +104,20 @@ def get_collision_bounds(new_text_box, existing_text_boxes, img_size):
                         colliders1.append(new1)
                     # top overlap
                     elif (col1.x1 >= col2.x1 and col1.x2 <= col2.x2 and col1.y1 <= col2.y1 and col1.y2 >= col2.y1):
-                        print("trigger top")
+                        # print("trigger top")
                         new = Rectangle(col1.x1, col1.y1, col1.x2, col2.y1)
                         colliders1.remove(col1)
                         colliders1.append(new)
                     # bottom overlap
                     elif (col1.x1 >= col2.x1 and col1.x2 <= col2.x2 and col1.y1 >= col2.y1 and col1.y2 >= col2.y2):
-                        print("trigger bottom")
+                        # print("trigger bottom")
                         new = Rectangle(col1.x1, col2.y2, col1.x2, col1.y2)
                         colliders1.remove(col1)
                         colliders1.append(new)
-                    else:
-                        print("!!!unaccounted overlap, might cause issues!!!")
-                        print("col1 = " + str(col1.x1) + " " + str(col1.y1) + " " + str(col1.x2) + " " + str(col1.y2))
-                        print("col2 = " + str(col2.x1) + " " + str(col2.y1) + " " + str(col2.x2) + " " + str(col2.y2))
+                    # else:
+                        # print("!!!unaccounted overlap, might cause issues!!!")
+                        # print("col1 = " + str(col1.x1) + " " + str(col1.y1) + " " + str(col1.x2) + " " + str(col1.y2))
+                        # print("col2 = " + str(col2.x1) + " " + str(col2.y1) + " " + str(col2.x2) + " " + str(col2.y2))
     colliders2 = convert_to_relative(colliders1)
     return colliders2
 
@@ -165,7 +165,7 @@ def draw_boxes(sections, colliders, img_size, new_text_box=None):
                           fill="green", outline="black", width=1)
 
     for collider in colliders:
-        print(collider.x, collider.y, collider.width, collider.height)
+        # print(collider.x, collider.y, collider.width, collider.height)
         new_img.rectangle(((collider.x, collider.y), (collider.x + collider.width, collider.y + collider.height)),
                           fill="red")
 
@@ -204,9 +204,9 @@ def get_text_position(new_text_box_size, existing_text_boxes_pos, img_size, draw
 
     colliders = get_collision_bounds(new_text_box, existing_text_boxes, img_bounds)
 
-    for c in colliders:
-        print(c.x, c.y, c.width, c.height)
-    print(img_bounds.x, img_bounds.y, img_bounds.width, img_bounds.height, end="\n----------------\n")
+    # for c in colliders:
+        # print(c.x, c.y, c.width, c.height)
+    # print(img_bounds.x, img_bounds.y, img_bounds.width, img_bounds.height, end="\n----------------\n")
 
     colliders1 = convert_to_absolute(colliders)
     valid_rects1 = list(split_rectangles(Rectangle(img_bounds.x, img_bounds.y, img_bounds.width, img_bounds.height), colliders1))
@@ -221,25 +221,27 @@ def get_text_position(new_text_box_size, existing_text_boxes_pos, img_size, draw
         # dont forget to draw the original boxes, not the colliders, since colliders are minkowski'd
         if draw:
             draw_boxes(valid_rects, existing_text_boxes, img_size, new_text_box=new_text_box)
+
+        return new_text_box.x, new_text_box.y
     elif draw:
         draw_boxes(valid_rects, existing_text_boxes, img_size)
-        print("no valid positions found")
+        # # print("no valid positions found")
 
 
-if __name__ == "__main__":
-    existing = [
-        Rect(60, 150, 350, 450),
-        Rect(700, 700, 50, 50),
-        Rect(0, 1030, 1920, 50)
-    ]
-    bounding = Rect(0, 0, 1920, 1080)
-
-    for e in existing:
-        print(e.x, e.y, e.width, e.height)
-    print(bounding.x, bounding.y, bounding.width, bounding.height, end="\n----------------\n")
-
-    # for things in get_valid_bounds(existing, bounding):
-    #     print(things.x, things.y, things.width, things.height)
-
-    print("\ncompared to...\n")
-    get_text_position((50, 50), existing, (bounding.width, bounding.height), draw=True)
+# if __name__ == "__main__":
+#     existing = [
+#         Rect(60, 150, 350, 450),
+#         Rect(700, 700, 50, 50),
+#         Rect(0, 1030, 1920, 50)
+#     ]
+#     bounding = Rect(0, 0, 1920, 1080)
+# 
+#     for e in existing:
+#         # print(e.x, e.y, e.width, e.height)
+#     # print(bounding.x, bounding.y, bounding.width, bounding.height, end="\n----------------\n")
+# 
+#     # for things in get_valid_bounds(existing, bounding):
+#     #     # print(things.x, things.y, things.width, things.height)
+# 
+#     # print("\ncompared to...\n")
+#     get_text_position((50, 50), existing, (bounding.width, bounding.height), draw=True)
