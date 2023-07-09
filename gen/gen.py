@@ -1,4 +1,4 @@
-from perlin_numpy import generate_fractal_noise_2d, generate_perlin_noise_2d
+from perlin_numpy import generate_perlin_noise_2d
 from essential_generators import DocumentGenerator
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
@@ -7,37 +7,19 @@ import re
 import os
 
 from position import get_text_position
+from pos import TextBox
+from pos import get_position
 
 
-class TextBox(object):
-    def __init__(self, text="", x=0, y=0, width=0, height=0, font=""):
-        self.text = text
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-        self.font = font
+def get_sentence():
+    gen = DocumentGenerator()
 
+    sentence = gen.sentence()
+    sentence = sentence.replace("–", "-").replace("—", "-").replace("−", "-")
+    sentence = re.sub('[\s]+', " ", sentence)
+    sentence = re.sub('[^\u0020-\u007E0-9\u00A0-\u00FF$¢£¤¥₣₤₧₪₫€₹₽₿!?]', "", sentence)
 
-def no_collision_check(test_box, text_boxes):
-    if not text_boxes:
-        return True
-    else:
-        for compBox in text_boxes:
-            if (test_box.x < compBox.x + compBox.width and
-                    test_box.x + test_box.width > compBox.x and
-                    test_box.y < compBox.y + compBox.height and
-                    test_box.y + test_box.height > compBox.y):
-                return False
-        return True
-
-
-def oob_check(test_box, img_height, img_width):
-    if (test_box.y + test_box.height < img_height and
-            test_box.x + test_box.width < img_width):
-        return True
-    else:
-        return False
+    return sentence
 
 
 def generate_image(img_height, img_width, noise_scale):
@@ -55,75 +37,33 @@ def generate_image(img_height, img_width, noise_scale):
     img = Image.fromarray(noise)
     draw = ImageDraw.Draw(img)
 
-    gen = DocumentGenerator()
-    # number of lines to place around the image (max exclusive, min inclusive)
-    ceil = np.random.randint(1, 21)
-    count = 0
+    num_sentences = np.random.randint(1, 21)
+    cur_sentences = 0
+
     text_boxes = []
 
-    while count < ceil:
-        sentence = gen.sentence()
-        sentence = sentence.replace("–", "-").replace("—", "-").replace("−", "-")
-        sentence = re.sub('[\s]+', " ", sentence)
-        sentence = re.sub('[^\u0020-\u007E0-9\u00A0-\u00FF$¢£¤¥₣₤₧₪₫€₹₽₿!?]', "", sentence)
-
-        # try:
+    while cur_sentences < num_sentences:
+        sentence = get_sentence()
         font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(65, 151))
         left, top, width, height = draw.textbbox((0, 0), sentence, font=font, anchor="lt")
-        # width = left + width
-        # height = top + height
-        # print(left)
-        # print(top)
-        #
-        # print(text_boxes)
+        new_box = TextBox(sentence, 0, 0, width, height, font)
 
-        tmp = get_text_position((width, height), text_boxes, (img_width, img_height))
-        print(tmp)
+        x_pos, y_pos = get_position(new_box, text_boxes, (img_width, img_height))
+        new_box.x = x_pos
+        new_box.y = y_pos
 
-        new_box = TextBox(sentence, np.random.randint(0, img_width), np.random.randint(0, img_height), width,
-                          height, font)
+        if x_pos > 0 and y_pos > 0:
+            # new_box = TextBox(sentence, x_pos, y_pos, width, height, font)
+            fill, stroke = random.sample([0, 255], 2)
+            draw.text((x_pos, y_pos), new_box.text, font=new_box.font, fill=fill,
+                      stroke_width=random.choice([2, 6]), stroke_fill=stroke)
+            text_boxes.append(new_box)
 
-        a, b = random.sample([0, 255], 2)
-        # draw.text((x_pos, y_pos), new_box.text, font=new_box.font, fill=a,
-        #           stroke_width=random.choice([2, 6]), stroke_fill=b)
-
-        # position = get_text_position((new_box.x, new_box.y, new_box.width, new_box.height), [],
-        #                              (img_height, img_width))
-
-
-        count = ceil
-
-
-
-
-
-
-        # if no_collision_check(new_box, text_boxes) and oob_check(new_box, img_height, img_width):
-        #     a, b = random.sample([0, 255], 2)
-        #     draw.text((new_box.x, new_box.y), new_box.text, font=new_box.font, fill=a,
-        #                 stroke_width=random.choice([2, 6]), stroke_fill=b)
-        #     if (np.random.randint(0, 2)):
-        #         offset = np.random.randint(0, 20)
-        #         cutter = TextBox("if you're seeing this, something has gone terribly wrong.", new_box.x - offset, (new_box.y + new_box.height) - np.random.randint(0, 5), new_box.width + offset + np.random.randint(0, 20), np.random.randint(10, 50), new_box.font)
-        #         draw.rectangle([cutter.x, cutter.y, cutter.x + cutter.width, cutter.y + cutter.height], fill=random.choice(["black", "white"]), outline=None, width=1)
-        #         text_boxes.append(cutter)
-        #     text_boxes.append(new_box)
-        #     count += 1
-        # else:
-        #     print("Colliding with existing, skipping")
-        # # except:
-        # #     print("Skipping due to encoding error")
-        # #     print(sentence)
+        cur_sentences += 1
 
     return img
 
 
 if __name__ == "__main__":
-    # print("Number of images to generate:")
-    # number = int(input())
-    # totalCount = 0
-    #
-    # while totalCount < number:
     new_img = generate_image(1080, 1920, (27, 48))
     new_img.show()
-        # totalCount += 1
