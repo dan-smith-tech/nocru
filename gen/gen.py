@@ -1,12 +1,12 @@
 from perlin_numpy import generate_perlin_noise_2d
 from essential_generators import DocumentGenerator
 from PIL import Image, ImageDraw, ImageFont
+import matplotlib.pyplot as plt
 import numpy as np
 import random
 import re
 import os
 
-from position import get_text_position
 from pos import TextBox
 from pos import get_position
 
@@ -16,8 +16,8 @@ def get_sentence():
 
     sentence = gen.sentence()
     sentence = sentence.replace("–", "-").replace("—", "-").replace("−", "-")
-    sentence = re.sub('[\s]+', " ", sentence)
-    sentence = re.sub('[^\u0020-\u007E0-9\u00A0-\u00FF$¢£¤¥₣₤₧₪₫€₹₽₿!?]', "", sentence)
+    sentence = re.sub("[\s]+", " ", sentence)
+    sentence = re.sub("[^\u0020-\u007E0-9\u00A0-\u00FF$¢£¤¥₣₤₧₪₫€₹₽₿!?]", "", sentence)
 
     return sentence
 
@@ -32,21 +32,27 @@ def generate_image(img_height, img_width, noise_scale):
     :return: the generated image
     """
 
-    noise = (generate_perlin_noise_2d((img_height, img_width), noise_scale) * 255).astype(np.uint8)
+    noise = (
+            generate_perlin_noise_2d((img_height, img_width), noise_scale) * 255
+    ).astype(np.uint8)
 
     img = Image.fromarray(noise)
     draw = ImageDraw.Draw(img)
 
-    num_sentences = np.random.randint(1, 21)
+    num_sentences = 1  # np.random.randint(1, 21)
     cur_sentences = 0
 
     text_boxes = []
 
     while cur_sentences < num_sentences:
         sentence = get_sentence()
-        font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(65, 151))
-        left, top, width, height = draw.textbbox((0, 0), sentence, font=font, anchor="lt")
-        new_box = TextBox(sentence, 0, 0, width, height, font)
+        font = ImageFont.FreeTypeFont(
+            "fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 70)
+        )
+        left, top, width, height = draw.textbbox(
+            (0, 0), sentence, font=font, anchor="lt"
+        )
+        new_box = TextBox(0, 0, width, height, sentence, font)
 
         x_pos, y_pos = get_position(new_box, text_boxes, (img_width, img_height))
         new_box.x = x_pos
@@ -55,8 +61,14 @@ def generate_image(img_height, img_width, noise_scale):
         if x_pos > 0 and y_pos > 0:
             # new_box = TextBox(sentence, x_pos, y_pos, width, height, font)
             fill, stroke = random.sample([0, 255], 2)
-            draw.text((x_pos, y_pos), new_box.text, font=new_box.font, fill=fill,
-                      stroke_width=random.choice([2, 6]), stroke_fill=stroke)
+            draw.text(
+                (x_pos, y_pos),
+                new_box.text,
+                font=new_box.font,
+                fill=fill,
+                stroke_width=random.choice([2, 6]),
+                stroke_fill=stroke,
+            )
             text_boxes.append(new_box)
 
         cur_sentences += 1
@@ -66,4 +78,6 @@ def generate_image(img_height, img_width, noise_scale):
 
 if __name__ == "__main__":
     new_img = generate_image(1080, 1920, (27, 48))
-    new_img.show()
+    plt.imshow(new_img, cmap="gray")
+    plt.axis("off")
+    plt.show()
