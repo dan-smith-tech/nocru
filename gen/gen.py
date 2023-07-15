@@ -39,7 +39,7 @@ def generate_image(img_height, img_width, noise_scale):
     img = Image.fromarray(noise)
     draw = ImageDraw.Draw(img)
 
-    num_sentences = 1  # np.random.randint(1, 21)
+    num_sentences = 8  # np.random.randint(1, 21)
     cur_sentences = 0
 
     text_boxes = []
@@ -78,6 +78,7 @@ def generate_image(img_height, img_width, noise_scale):
 
 if __name__ == "__main__":
     new_img = generate_image(1080, 1920, (27, 48))
-    plt.imshow(new_img, cmap="gray")
-    plt.axis("off")
-    plt.show()
+    # plt.imshow(new_img, cmap="gray")
+    # plt.axis("off")
+    # plt.show()
+    new_img.save("idunno.png")
