@@ -1,7 +1,6 @@
 from perlin_numpy import generate_perlin_noise_2d
 from essential_generators import DocumentGenerator
 from PIL import Image, ImageDraw, ImageFont
-import matplotlib.pyplot as plt
 import numpy as np
 import random
 import re
@@ -72,6 +71,11 @@ def generate_image(img_height, img_width, noise_scale):
                 stroke_width=random.choice([2, 6]),
                 stroke_fill=stroke,
             )
+            if (np.random.randint(0, 2)):
+                offset = np.random.randint(0, 20)
+                cutter = TextBox(new_box.x - offset, (new_box.y + new_box.height) - np.random.randint(0, 5), new_box.width + offset + np.random.randint(0, 20), np.random.randint(10, 50), new_box.font, "if you're seeing this, something has gone terribly wrong.")
+                draw.rectangle([cutter.x, cutter.y, cutter.x + cutter.width, cutter.y + cutter.height], fill=random.choice(["black", "white"]), outline=None, width=1)
+                text_boxes.append(cutter)
             text_boxes.append(new_box)
 
         cur_sentences += 1
