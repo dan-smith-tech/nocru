@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 
 class TextBox(object):
@@ -32,7 +31,6 @@ def get_minkowski_bounds(new_box, existing_box, img_size):
     if rect.y < 0:
         rect.height += rect.y
         rect.y = 0
-    # need to account for position offset:
     if rect.width > img_size[0]:
         rect.width = img_size[0]
     if rect.height > img_size[1]:
@@ -57,9 +55,6 @@ def get_position(new_box, existing_boxes, img_size):
         collider = get_minkowski_bounds(new_box, existing_box, img_size)
         img[collider.y:collider.y + collider.height, collider.x:collider.x + collider.width] = 1
 
-    plt.imshow(img, cmap="gray")
-    plt.show()
-
     y, x = np.where(img == 0)
 
     if len(x) == 0 or len(y) == 0:
@@ -67,14 +62,3 @@ def get_position(new_box, existing_boxes, img_size):
 
     i = np.random.randint(len(x))
     return [x[i], y[i]]
-
-
-def main():
-    new_box = TextBox(30, 40, 20, 20, "hi", None)
-    existing_box1 = TextBox(50, 30, 20, 30, "bi", None)
-    existing_box2 = TextBox(40, 20, 20, 30, "bi", None)
-    print(get_position(new_box, [existing_box1, existing_box2], (100, 100)))
-
-
-if __name__ == "__main__":
-    main()

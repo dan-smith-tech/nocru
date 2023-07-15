@@ -1,7 +1,6 @@
 from perlin_numpy import generate_perlin_noise_2d
 from essential_generators import DocumentGenerator
 from PIL import Image, ImageDraw, ImageFont
-import matplotlib.pyplot as plt
 import numpy as np
 import random
 import re
@@ -22,47 +21,37 @@ def get_sentence():
     return sentence
 
 
-def generate_image(img_height, img_width, noise_scale):
+def generate_image(img_size, noise_scale=(27, 48)):
     """
-    Generates an image with random text and a noise background.
-
-    :param img_height: height of the image in pixels
-    :param img_width: width of the image in pixels
-    :param noise_scale: scale of perlin noise pattern (smaller is more zoomed in,must be multiples of respective axes)
+    :param img_size: (width, height) of the image
+    :param noise_scale: scale of perlin noise pattern (smaller is more zoomed in, must be multiples of respective axes)
     :return: the generated image
     """
 
-    noise = (
-            generate_perlin_noise_2d((img_height, img_width), noise_scale) * 255
-    ).astype(np.uint8)
-
+    noise = (generate_perlin_noise_2d((img_size[1], img_size[0]), noise_scale) * 255).astype(np.uint8)
     img = Image.fromarray(noise)
     draw = ImageDraw.Draw(img)
-
-    num_sentences = 8  # np.random.randint(1, 21)
-    cur_sentences = 0
-
     text_boxes = []
 
+    num_sentences = np.random.randint(1, 8)
+    cur_sentences = 0
     while cur_sentences < num_sentences:
         sentence = get_sentence()
         font = ImageFont.FreeTypeFont(
             "fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100)
         )
-        while (draw.textbbox((0, 0), sentence, font=font, anchor="lt")[2] > img_width or draw.textbbox((0, 0), sentence, font=font, anchor="lt")[3] > img_height):
-            font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100)
-        )
-        left, top, width, height = draw.textbbox(
-            (0, 0), sentence, font=font, anchor="lt"
-        )
+        while (draw.textbbox((0, 0), sentence, font=font, anchor="lt")[2] > img_size[0] or
+               draw.textbbox((0, 0), sentence, font=font, anchor="lt")[3] > img_size[1]):
+            font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100))
+
+        left, top, width, height = draw.textbbox((0, 0), sentence, font=font, anchor="lt")
         new_box = TextBox(0, 0, width, height, sentence, font)
 
-        x_pos, y_pos = get_position(new_box, text_boxes, (img_width, img_height))
+        x_pos, y_pos = get_position(new_box, text_boxes, (img_size[0], img_size[1]))
         new_box.x = x_pos
         new_box.y = y_pos
 
         if x_pos > -1 and y_pos > -1:
-            # new_box = TextBox(sentence, x_pos, y_pos, width, height, font)
             fill, stroke = random.sample([0, 255], 2)
             draw.text(
                 (x_pos, y_pos),
@@ -79,9 +68,17 @@ def generate_image(img_height, img_width, noise_scale):
     return img
 
 
+def generate_dataset(num_images, directory, img_size):
+    """
+    :param num_images: Integer quantity of images to generate
+    :param directory: relative location to save images in (include trailing slash)
+    :param img_size: (width, height) of the image
+    :return: None
+    """
+
+    for i in range(num_images):
+        generate_image(img_size).save(directory + "img-" + str(i) + ".png")
+
+
 if __name__ == "__main__":
-    new_img = generate_image(1080, 1920, (27, 48))
-    # plt.imshow(new_img, cmap="gray")
-    # plt.axis("off")
-    # plt.show()
-    new_img.save("idunno.png")
+    generate_dataset(3, "../out/", (1920, 1080))
