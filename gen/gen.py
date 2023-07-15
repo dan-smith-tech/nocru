@@ -49,6 +49,9 @@ def generate_image(img_height, img_width, noise_scale):
         font = ImageFont.FreeTypeFont(
             "fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100)
         )
+        while (draw.textbbox((0, 0), sentence, font=font, anchor="lt")[2] > img_width or draw.textbbox((0, 0), sentence, font=font, anchor="lt")[3] > img_height):
+            font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100)
+        )
         left, top, width, height = draw.textbbox(
             (0, 0), sentence, font=font, anchor="lt"
         )
