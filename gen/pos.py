@@ -57,15 +57,10 @@ def get_position(new_box, existing_boxes, img_size):
         collider = get_minkowski_bounds(new_box, existing_box, img_size)
         img[collider.y:collider.y + collider.height, collider.x:collider.x + collider.width] = 1
 
-    bx=existing_boxes[0]
-    img[bx.y:bx.y + bx.height, bx.x:bx.x + bx.width] = 0.75
-
-    img[new_box.y:new_box.y + new_box.height, new_box.x:new_box.x + new_box.width] = 0.5
-
     plt.imshow(img, cmap="gray")
     plt.show()
 
-    x, y = np.where(img == 0)
+    y, x = np.where(img == 0)
 
     if len(x) == 0 or len(y) == 0:
         return -1, -1
@@ -76,16 +71,10 @@ def get_position(new_box, existing_boxes, img_size):
 
 def main():
     new_box = TextBox(30, 40, 20, 20, "hi", None)
-    existing_box = TextBox(0, 0, 20, 30, "bi", None)
-    print(get_position(new_box, [existing_box], (100, 100)))
+    existing_box1 = TextBox(50, 30, 20, 30, "bi", None)
+    existing_box2 = TextBox(40, 20, 20, 30, "bi", None)
+    print(get_position(new_box, [existing_box1, existing_box2], (100, 100)))
 
 
 if __name__ == "__main__":
     main()
-    # img = np.zeros((5, 5))
-    # x = 3
-    # y = 0
-    # w = 2
-    # h = 3
-    # img[y:y + h, x:x + w] = 1
-    # print(img)

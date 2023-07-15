@@ -47,7 +47,7 @@ def generate_image(img_height, img_width, noise_scale):
     while cur_sentences < num_sentences:
         sentence = get_sentence()
         font = ImageFont.FreeTypeFont(
-            "fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 70)
+            "fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100)
         )
         left, top, width, height = draw.textbbox(
             (0, 0), sentence, font=font, anchor="lt"
@@ -58,7 +58,7 @@ def generate_image(img_height, img_width, noise_scale):
         new_box.x = x_pos
         new_box.y = y_pos
 
-        if x_pos > 0 and y_pos > 0:
+        if x_pos > -1 and y_pos > -1:
             # new_box = TextBox(sentence, x_pos, y_pos, width, height, font)
             fill, stroke = random.sample([0, 255], 2)
             draw.text(
