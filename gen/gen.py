@@ -3,6 +3,7 @@ from essential_generators import DocumentGenerator
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 import random
+import csv
 import re
 import os
 
@@ -14,7 +15,7 @@ def get_sentence():
     gen = DocumentGenerator()
 
     sentence = gen.sentence()
-    sentence = sentence.replace("–", "-").replace("—", "-").replace("−", "-")
+    sentence = sentence.replace("–", "-").replace("—", "-").replace("—", "-")
     sentence = re.sub("[\s]+", " ", sentence)
     sentence = re.sub("[^\u0020-\u007E0-9\u00A0-\u00FF$¢£¤¥₣₤₧₪₫€₹₽₿!?]", "", sentence)
 
@@ -31,6 +32,7 @@ def generate_image(img_size, noise_scale=(27, 48)):
     noise = (generate_perlin_noise_2d((img_size[1], img_size[0]), noise_scale) * 255).astype(np.uint8)
     img = Image.fromarray(noise)
     draw = ImageDraw.Draw(img)
+    boxes = []
     text_boxes = []
 
     num_sentences = np.random.randint(1, 8)
@@ -47,7 +49,7 @@ def generate_image(img_size, noise_scale=(27, 48)):
         left, top, width, height = draw.textbbox((0, 0), sentence, font=font, anchor="lt")
         new_box = TextBox(0, 0, width, height, sentence, font)
 
-        x_pos, y_pos = get_position(new_box, text_boxes, (img_size[0], img_size[1]))
+        x_pos, y_pos = get_position(new_box, boxes, (img_size[0], img_size[1]))
         new_box.x = x_pos
         new_box.y = y_pos
 
@@ -68,12 +70,15 @@ def generate_image(img_size, noise_scale=(27, 48)):
                                  new_box.font, "if you're seeing this, something has gone terribly wrong.")
                 draw.rectangle((cutter.x, cutter.y, cutter.x + cutter.width, cutter.y + cutter.height),
                                fill=random.choice(["black", "white"]), outline=None, width=1)
-                text_boxes.append(cutter)
+                boxes.append(cutter)
+            boxes.append(new_box)
             text_boxes.append(new_box)
 
         cur_sentences += 1
 
-    return img
+    text_boxes.sort(key=lambda box: box.y)
+
+    return img, [t.text for t in text_boxes]
 
 
 def generate_dataset(num_images, directory, img_size):
@@ -84,9 +89,15 @@ def generate_dataset(num_images, directory, img_size):
     :return: None
     """
 
-    for i in range(num_images):
-        generate_image(img_size).save(directory + "img-" + str(i) + ".png")
+    with open(directory + "_labels.csv", "w", encoding="UTF8") as file:
+        writer = csv.writer(file, delimiter="—", quotechar=" ", quoting=csv.QUOTE_MINIMAL)
+
+        for i in range(num_images):
+            new_image, label = generate_image(img_size)
+            new_image.save(directory + str(i) + ".png")
+
+            writer.writerow(label)
 
 
 if __name__ == "__main__":
-    generate_dataset(3, "../out/", (1920, 1080))
+    generate_dataset(1, "../out/", (1920, 1080))
