@@ -154,14 +154,8 @@ def generate_dataset(size, start=0, directory="../dataset/"):
 
 
 if __name__ == "__main__":
-    print("Size of dataset: ")
-    size = int(input())
-    
-    print("Start index: ")
-    start = int(input())
-
+    size = int(input("Size of dataset: "))
+    start = int(input("Start index: "))
     print("Dataset generating...")
-
     generate_dataset(size, start=start)
-
-    print("Dataset complete.")
+    print("Dataset completed.")
