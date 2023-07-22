@@ -1,8 +1,8 @@
 from essential_generators import DocumentGenerator
 from perlin_numpy import generate_perlin_noise_2d
 from PIL import Image, ImageDraw, ImageFont
+import multiprocessing
 import numpy as np
-import threading
 import random
 import json
 import time
@@ -13,9 +13,9 @@ from pos import get_position
 from pos import TextBox
 
 
-class Generator(threading.Thread):
+class Generator(multiprocessing.Process):
     def __init__(self, thread_id, size, begin, directory):
-        threading.Thread.__init__(self)
+        multiprocessing.Process.__init__(self)
         self.thread_id = thread_id
         self.size = size
         self.begin = begin
