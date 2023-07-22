@@ -188,9 +188,10 @@ def generate_dataset(size, begin=0, directory="../dataset/", threads=6):
 def init():
     size = int(input("Size of dataset: "))
     begin = int(input("Start index: "))
+    threads = int(input("Number of threads: "))
     print("Dataset generating...")
     bt = time.time()
-    generate_dataset(size, begin=begin)
+    generate_dataset(size, begin=begin, threads=threads)
     et = time.time()
     print("Dataset completed in " + str(round(et - bt, 3)) + " seconds.")
 
