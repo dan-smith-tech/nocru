@@ -2,6 +2,7 @@ from essential_generators import DocumentGenerator
 from perlin_numpy import generate_perlin_noise_2d
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
+import threading
 import random
 import json
 import time
@@ -10,6 +11,28 @@ import os
 
 from pos import get_position
 from pos import TextBox
+
+
+class Generator(threading.Thread):
+    def __init__(self, thread_id, size, begin, directory):
+        threading.Thread.__init__(self)
+        self.thread_id = thread_id
+        self.size = size
+        self.begin = begin
+        self.directory = directory
+
+    def run(self):
+        for i in range(self.begin, self.begin + self.size):
+            new_image, text_boxes = generate_image()
+            new_image.save(self.directory + str(i) + ".png")
+
+            label = {
+                "id": i,
+                "text_boxes": [box.__dict__ for box in text_boxes]
+            }
+
+            with open(self.directory + str(i) + '.json', 'w', encoding='utf-8') as f:
+                json.dump(label, f, cls=NpTypeEncoder, ensure_ascii=False, indent=4)
 
 
 class NpTypeEncoder(json.JSONEncoder):
@@ -134,31 +157,43 @@ def generate_image():
     return img, text_boxes
 
 
-def generate_dataset(size, start=0, directory="../dataset/"):
+def generate_dataset(size, begin=0, directory="../dataset/", threads=6):
     """
     :param size: Integer quantity of images to generate
-    :param start: Integer index to begin generating at
+    :param begin: Integer index to begin generating at
     :param directory: String of relative location to save images to (including trailing slash)
+    :param threads: Integer quantity of threads to use
     """
 
-    for i in range(start, start + size):
-        new_image, text_boxes = generate_image()
-        new_image.save(directory + str(i) + ".png")
+    extra = size % threads
+    segment_size = (size - extra) // threads
 
-        label = {
-            "id": i,
-            "text_boxes": [box.__dict__ for box in text_boxes]
-        }
+    active_threads = []
 
-        with open(directory + str(i) + '.json', 'w', encoding='utf-8') as f:
-            json.dump(label, f, cls=NpTypeEncoder, ensure_ascii=False, indent=4)
+    for i in range(threads - 1):
+        active_threads.append(
+            Generator(str(i), segment_size, begin + i * segment_size, directory)
+        )
+    active_threads.append(
+        Generator(str(threads - 1), segment_size + extra, begin + (threads - 1) * segment_size, directory)
+    )
+
+    for thread in active_threads:
+        thread.start()
+
+    for thread in active_threads:
+        thread.join()
+
+
+def init():
+    size = int(input("Size of dataset: "))
+    begin = int(input("Start index: "))
+    print("Dataset generating...")
+    bt = time.time()
+    generate_dataset(size, begin=begin)
+    et = time.time()
+    print("Dataset completed in " + str(round(et - bt, 3)) + " seconds.")
 
 
 if __name__ == "__main__":
-    size = int(input("Size of dataset: "))
-    start = int(input("Start index: "))
-    print("Dataset generating...")
-    begin = time.time()
-    generate_dataset(size, start=start)
-    end = time.time()
-    print("Dataset completed in " + str(round(end - begin, 3)) + " seconds.")
+    init()
