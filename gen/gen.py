@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 import random
 import json
+import time
 import re
 import os
 
@@ -157,5 +158,7 @@ if __name__ == "__main__":
     size = int(input("Size of dataset: "))
     start = int(input("Start index: "))
     print("Dataset generating...")
+    begin = time.time()
     generate_dataset(size, start=start)
-    print("Dataset completed.")
+    end = time.time()
+    print("Dataset completed in " + str(round(end - begin, 3)) + " seconds.")
