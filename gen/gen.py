@@ -55,7 +55,7 @@ def get_font(sentence, draw, img_size):
 
     font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100))
 
-    # TODO: what exactly does this do?
+    # makes sure sentence isnt literally too wide for the image. retries if it is.
     while (draw.textbbox((0, 0), sentence, font=font, anchor="lt")[2] > img_size[0] or
            draw.textbbox((0, 0), sentence, font=font, anchor="lt")[3] > img_size[1]):
         font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100))
