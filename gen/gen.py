@@ -40,7 +40,7 @@ class Generator(multiprocessing.Process):
 
 
 class GeneratorFTP(multiprocessing.Process):
-    def __init__(self, thread_id, size, begin, address, username, password):
+    def __init__(self, thread_id, size, begin, address, username, password, directory):
         multiprocessing.Process.__init__(self)
         self.thread_id = thread_id
         self.size = size
@@ -48,6 +48,7 @@ class GeneratorFTP(multiprocessing.Process):
         self.address = address
         self.username = username
         self.password = password
+        self.directory = directory
 
     def run(self):
         for i in range(self.begin, self.begin + self.size):
@@ -68,8 +69,11 @@ class GeneratorFTP(multiprocessing.Process):
             label_json_buffer_io = io.BytesIO(label_json)
 
             session = ftplib.FTP(self.address, self.username, self.password)
+            session.cwd(self.directory)
             session.storbinary('STOR ' + str(i) + ".png", image_buffer_io)
             session.storbinary('STOR ' + str(i) + ".json", label_json_buffer_io)
+
+            # close IO buffers
             image_buffer_io.close()
             label_json_buffer_io.close()
             session.quit()
@@ -197,7 +201,7 @@ def generate_image():
     return img, text_boxes
 
 
-def generate_dataset(size, begin=0, threads=6):
+def generate_dataset(size, directory, begin=0, threads=6):
     """
     :param size: Integer quantity of images to generate
     :param begin: Integer index to begin generating at
@@ -212,11 +216,11 @@ def generate_dataset(size, begin=0, threads=6):
     for i in range(threads - 1):
         active_threads.append(
             GeneratorFTP(str(i), segment_size, begin + i * segment_size,
-                         config("FILESYSTEM_ADDRESS"), config("FILESYSTEM_USERNAME"), config("FILESYSTEM_PASSWORD"))
+                         config("FILESYSTEM_ADDRESS"), config("FILESYSTEM_USERNAME"), config("FILESYSTEM_PASSWORD"), directory=directory)
         )
     active_threads.append(
         GeneratorFTP(str(threads - 1), segment_size + extra, begin + (threads - 1) * segment_size,
-                     config("FILESYSTEM_ADDRESS"), config("FILESYSTEM_USERNAME"), config("FILESYSTEM_PASSWORD"))
+                     config("FILESYSTEM_ADDRESS"), config("FILESYSTEM_USERNAME"), config("FILESYSTEM_PASSWORD"), directory=directory)
     )
 
     for thread in active_threads:
@@ -227,12 +231,13 @@ def generate_dataset(size, begin=0, threads=6):
 
 
 def init():
+    directory = input("Directory: ")
     size = int(input("Size of dataset: "))
     begin = int(input("Start index: "))
     threads = int(input("Number of threads: "))
     print("Dataset generating...")
     bt = time.time()
-    generate_dataset(size, begin=begin, threads=threads)
+    generate_dataset(size, directory, begin=begin, threads=threads)
     et = time.time()
     print("Dataset completed in " + str(round(et - bt, 3)) + " seconds.")
 
