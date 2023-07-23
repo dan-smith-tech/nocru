@@ -1,11 +1,15 @@
 from essential_generators import DocumentGenerator
 from perlin_numpy import generate_perlin_noise_2d
 from PIL import Image, ImageDraw, ImageFont
+from decouple import config
 import multiprocessing
 import numpy as np
 import random
+import ftplib
 import json
 import time
+import cv2
+import io
 import re
 import os
 
@@ -33,6 +37,42 @@ class Generator(multiprocessing.Process):
 
             with open(self.directory + str(i) + '.json', 'w', encoding='utf-8') as f:
                 json.dump(label, f, cls=NpTypeEncoder, ensure_ascii=False, indent=4)
+
+
+class GeneratorFTP(multiprocessing.Process):
+    def __init__(self, thread_id, size, begin, address, username, password):
+        multiprocessing.Process.__init__(self)
+        self.thread_id = thread_id
+        self.size = size
+        self.begin = begin
+        self.address = address
+        self.username = username
+        self.password = password
+
+    def run(self):
+        for i in range(self.begin, self.begin + self.size):
+            new_image, text_boxes = generate_image()
+
+            # convert Image to byte buffer
+            _, image_buffer = cv2.imencode('.png', np.array(new_image))
+            image_buffer_io = io.BytesIO(image_buffer)
+
+            label = {
+                "id": i,
+                "text_boxes": [box.__dict__ for box in text_boxes]
+            }
+
+            label_json = json.dumps(label, cls=NpTypeEncoder, ensure_ascii=False, indent=4).encode()
+
+            # convert json label to byte buffer
+            label_json_buffer_io = io.BytesIO(label_json)
+
+            session = ftplib.FTP(self.address, self.username, self.password)
+            session.storbinary('STOR ' + str(i) + ".png", image_buffer_io)
+            session.storbinary('STOR ' + str(i) + ".json", label_json_buffer_io)
+            image_buffer_io.close()
+            label_json_buffer_io.close()
+            session.quit()
 
 
 class NpTypeEncoder(json.JSONEncoder):
@@ -157,11 +197,10 @@ def generate_image():
     return img, text_boxes
 
 
-def generate_dataset(size, begin=0, directory="../dataset/", threads=6):
+def generate_dataset(size, begin=0, threads=6):
     """
     :param size: Integer quantity of images to generate
     :param begin: Integer index to begin generating at
-    :param directory: String of relative location to save images to (including trailing slash)
     :param threads: Integer quantity of threads to use
     """
 
@@ -172,10 +211,12 @@ def generate_dataset(size, begin=0, directory="../dataset/", threads=6):
 
     for i in range(threads - 1):
         active_threads.append(
-            Generator(str(i), segment_size, begin + i * segment_size, directory)
+            GeneratorFTP(str(i), segment_size, begin + i * segment_size,
+                         config("FILESYSTEM_ADDRESS"), config("FILESYSTEM_USERNAME"), config("FILESYSTEM_PASSWORD"))
         )
     active_threads.append(
-        Generator(str(threads - 1), segment_size + extra, begin + (threads - 1) * segment_size, directory)
+        GeneratorFTP(str(threads - 1), segment_size + extra, begin + (threads - 1) * segment_size,
+                     config("FILESYSTEM_ADDRESS"), config("FILESYSTEM_USERNAME"), config("FILESYSTEM_PASSWORD"))
     )
 
     for thread in active_threads:
