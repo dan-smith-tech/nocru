@@ -40,11 +40,6 @@ class Generator(multiprocessing.Process):
 
 
 class GeneratorFTP(multiprocessing.Process):
-    font_list = []
-
-    for f in os.listdir("fonts/"):
-        font_list.append(ImageFont.FreeTypeFont("fonts/" + f, 10))
-
     def __init__(self, thread_id, size, begin, address, username, password, directory):
         multiprocessing.Process.__init__(self)
         self.thread_id = thread_id
@@ -123,28 +118,25 @@ def get_sentence():
     return sentence
 
 
-def get_font(sentence, draw, img_size):
+def get_text(draw, img_size):
     """
     Randomly selects a font from the 'gen/fonts' directory.
 
-    :param sentence: String representing the sentence to be displayed
     :param draw: ImageDraw (mutated) that holds the current state of the image being generated
     :param img_size: (width, height) of the image
     :return: ImageFont.FreeTypeFont of the selected font
     """
 
-    font = random.choice(GeneratorFTP.font_list)
-    # font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100))
+    print("sentence")
+    sentence = get_sentence()
 
-    # makes sure sentence isnt literally too wide for the image. retries if it is.
-    while (draw.textbbox((0, 0), sentence, font=font, anchor="lt")[2] > img_size[0] or
-           draw.textbbox((0, 0), sentence, font=font, anchor="lt")[3] > img_size[1]):
-        font = random.choice(GeneratorFTP.font_list)
-        # font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100))
-    font1 = font
-    setattr(font1, 'size', np.random.randint(50, 100))
-    # font1.size = np.random.randint(50, 100)
-    return font1
+    font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100))
+
+    if (draw.textbbox((0, 0), sentence, font=font, anchor="lt")[2] > img_size[0] or
+            draw.textbbox((0, 0), sentence, font=font, anchor="lt")[3] > img_size[1]):
+        return get_text(draw, img_size)
+
+    return font, sentence
 
 
 def create_textbox(existing_boxes, draw, img_size):
@@ -157,10 +149,8 @@ def create_textbox(existing_boxes, draw, img_size):
     :return: TextBox of the new text placed on the image
     """
 
-    print("sentence")
-    sentence = get_sentence()
     print("font")
-    font = get_font(sentence, draw, img_size)
+    font, sentence = get_text(draw, img_size)
 
     print("bbox")
     left, top, width, height = draw.textbbox((0, 0), sentence, font=font, anchor="lt")
