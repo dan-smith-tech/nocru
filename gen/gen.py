@@ -16,10 +16,6 @@ import os
 from pos import get_position
 from pos import TextBox
 
-fonts_list = []
-
-for f in os.listdir("fonts/"):
-    fonts_list.append(ImageFont.FreeTypeFont("fonts/" + f, 10))
 
 class Generator(multiprocessing.Process):
     def __init__(self, thread_id, size, begin, directory):
@@ -44,6 +40,11 @@ class Generator(multiprocessing.Process):
 
 
 class GeneratorFTP(multiprocessing.Process):
+    font_list = []
+
+    for f in os.listdir("fonts/"):
+        font_list.append(ImageFont.FreeTypeFont("fonts/" + f, 10))
+
     def __init__(self, thread_id, size, begin, address, username, password, directory):
         multiprocessing.Process.__init__(self)
         self.thread_id = thread_id
@@ -132,13 +133,13 @@ def get_font(sentence, draw, img_size):
     :return: ImageFont.FreeTypeFont of the selected font
     """
 
-    font = random.choice(fonts_list)
+    font = random.choice(GeneratorFTP.font_list)
     # font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100))
 
     # makes sure sentence isnt literally too wide for the image. retries if it is.
     while (draw.textbbox((0, 0), sentence, font=font, anchor="lt")[2] > img_size[0] or
            draw.textbbox((0, 0), sentence, font=font, anchor="lt")[3] > img_size[1]):
-        font = random.choice(fonts_list)
+        font = random.choice(GeneratorFTP.font_list)
         # font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100))
     # setattr(font, 'size', np.random.randint(50, 100))
     font1 = font
@@ -166,7 +167,7 @@ def create_textbox(existing_boxes, draw, img_size):
     color, stroke_color = random.sample([0, 255], 2)
     stroke_width = random.choice([2, 6])
     new_box = TextBox(0, 0, width, height, sentence, font, color, stroke_width, stroke_color)
-    
+
     print("position")
     x_pos, y_pos = get_position(new_box, existing_boxes, (img_size[0], img_size[1]))
     new_box.x = x_pos
@@ -235,19 +236,21 @@ def generate_dataset(size, directory, begin=0, threads=6):
     :param threads: Integer quantity of threads to use
     """
 
-    extra = size % threads #10
-    segment_size = (size - extra) // threads #666
+    extra = size % threads  # 10
+    segment_size = (size - extra) // threads  # 666
 
     active_threads = []
 
     for i in range(threads - 1):
         active_threads.append(
             GeneratorFTP(str(i), segment_size, begin + i * segment_size,
-                         config("FILESYSTEM_ADDRESS"), config("FILESYSTEM_USERNAME"), config("FILESYSTEM_PASSWORD"), directory=directory)
+                         config("FILESYSTEM_ADDRESS"), config("FILESYSTEM_USERNAME"), config("FILESYSTEM_PASSWORD"),
+                         directory=directory)
         )
     active_threads.append(
         GeneratorFTP(str(threads - 1), segment_size + extra, begin + (threads - 1) * segment_size,
-                     config("FILESYSTEM_ADDRESS"), config("FILESYSTEM_USERNAME"), config("FILESYSTEM_PASSWORD"), directory=directory)
+                     config("FILESYSTEM_ADDRESS"), config("FILESYSTEM_USERNAME"), config("FILESYSTEM_PASSWORD"),
+                     directory=directory)
     )
 
     for thread in active_threads:
