@@ -16,6 +16,10 @@ import os
 from pos import get_position
 from pos import TextBox
 
+fonts_list = []
+
+for f in os.listdir("fonts/"):
+    fonts_list.append(ImageFont.FreeTypeFont("fonts/" + f, 10))
 
 class Generator(multiprocessing.Process):
     def __init__(self, thread_id, size, begin, directory):
@@ -51,9 +55,13 @@ class GeneratorFTP(multiprocessing.Process):
         self.directory = directory
 
     def run(self):
+        session = ftplib.FTP(self.address, self.username, self.password)
+        session.cwd(self.directory)
         for i in range(self.begin, self.begin + self.size):
+            print(self.thread_id + " generating " + str(i))
             new_image, text_boxes = generate_image()
 
+            print(self.thread_id + " converting " + str(i))
             # convert Image to byte buffer
             _, image_buffer = cv2.imencode('.png', np.array(new_image))
             image_buffer_io = io.BytesIO(image_buffer)
@@ -63,20 +71,23 @@ class GeneratorFTP(multiprocessing.Process):
                 "text_boxes": [box.__dict__ for box in text_boxes]
             }
 
+            print(self.thread_id + " jsondump " + str(i))
             label_json = json.dumps(label, cls=NpTypeEncoder, ensure_ascii=False, indent=4).encode()
 
             # convert json label to byte buffer
+            print(self.thread_id + " json to buffer " + str(i))
             label_json_buffer_io = io.BytesIO(label_json)
 
-            session = ftplib.FTP(self.address, self.username, self.password)
-            session.cwd(self.directory)
+            print(self.thread_id + " writing " + str(i))
+            if str(i) + ".png" in session.nlst():
+                print("!!!!!TRYING TO WRITE TO EXISTING FILE!!!!")
             session.storbinary('STOR ' + str(i) + ".png", image_buffer_io)
             session.storbinary('STOR ' + str(i) + ".json", label_json_buffer_io)
-
             # close IO buffers
             image_buffer_io.close()
             label_json_buffer_io.close()
-            session.quit()
+            print(self.thread_id + " completed " + str(i))
+        session.quit()
 
 
 class NpTypeEncoder(json.JSONEncoder):
@@ -121,14 +132,18 @@ def get_font(sentence, draw, img_size):
     :return: ImageFont.FreeTypeFont of the selected font
     """
 
-    font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100))
+    font = random.choice(fonts_list)
+    # font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100))
 
     # makes sure sentence isnt literally too wide for the image. retries if it is.
     while (draw.textbbox((0, 0), sentence, font=font, anchor="lt")[2] > img_size[0] or
            draw.textbbox((0, 0), sentence, font=font, anchor="lt")[3] > img_size[1]):
-        font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100))
-
-    return font
+        font = random.choice(fonts_list)
+        # font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100))
+    # setattr(font, 'size', np.random.randint(50, 100))
+    font1 = font
+    font1.size = np.random.randint(50, 100)
+    return font1
 
 
 def create_textbox(existing_boxes, draw, img_size):
@@ -141,18 +156,23 @@ def create_textbox(existing_boxes, draw, img_size):
     :return: TextBox of the new text placed on the image
     """
 
+    print("sentence")
     sentence = get_sentence()
+    print("font")
     font = get_font(sentence, draw, img_size)
 
+    print("bbox")
     left, top, width, height = draw.textbbox((0, 0), sentence, font=font, anchor="lt")
     color, stroke_color = random.sample([0, 255], 2)
     stroke_width = random.choice([2, 6])
     new_box = TextBox(0, 0, width, height, sentence, font, color, stroke_width, stroke_color)
-
+    
+    print("position")
     x_pos, y_pos = get_position(new_box, existing_boxes, (img_size[0], img_size[1]))
     new_box.x = x_pos
     new_box.y = y_pos
 
+    print("overlap")
     # 50% chance to add an overlap box
     if np.random.randint(0, 2):
         new_box.cutter_x = new_box.x
@@ -175,14 +195,20 @@ def generate_image():
     img_size = (1920, 1080)
     noise_scale = (27, 48)
 
+    print("perlin")
     noise = (generate_perlin_noise_2d((img_size[1], img_size[0]), noise_scale) * 255).astype(np.uint8)
+    print("array")
     img = Image.fromarray(noise)
+    print("draw")
     draw = ImageDraw.Draw(img)
     text_boxes = []
 
+    print("boxes")
     for i in range(random.randrange(8)):
+        print("create box")
         new_box = create_textbox(text_boxes, draw, img_size)
 
+        print("fit")
         # if the text fits on the image somewhere, place it
         if new_box.x > -1 and new_box.y > -1:
             draw.text((new_box.x, new_box.y), new_box.text, font=new_box.font, fill=new_box.color,
@@ -190,14 +216,15 @@ def generate_image():
             # change FreeTypeFont to (name, weight) of font
             new_box.font = new_box.font.getname()
 
+            print("cutter")
             # if there is a cutter associated with this text box, place it
             if new_box.cutter_x:
                 draw.rectangle((new_box.cutter_x, new_box.cutter_y, new_box.cutter_x + new_box.cutter_width,
                                 new_box.cutter_y + new_box.cutter_height),
                                fill=new_box.cutter_color, outline=None, width=1)
-
+            print("append")
             text_boxes.append(new_box)
-
+    print("boxes done")
     return img, text_boxes
 
 
@@ -208,8 +235,8 @@ def generate_dataset(size, directory, begin=0, threads=6):
     :param threads: Integer quantity of threads to use
     """
 
-    extra = size % threads
-    segment_size = (size - extra) // threads
+    extra = size % threads #10
+    segment_size = (size - extra) // threads #666
 
     active_threads = []
 
