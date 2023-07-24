@@ -141,9 +141,9 @@ def get_font(sentence, draw, img_size):
            draw.textbbox((0, 0), sentence, font=font, anchor="lt")[3] > img_size[1]):
         font = random.choice(GeneratorFTP.font_list)
         # font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100))
-    # setattr(font, 'size', np.random.randint(50, 100))
     font1 = font
-    font1.size = np.random.randint(50, 100)
+    setattr(font1, 'size', np.random.randint(50, 100))
+    # font1.size = np.random.randint(50, 100)
     return font1
 
 
