@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import copy
 
@@ -83,6 +84,9 @@ def get_position(new_box, existing_boxes, img_size):
             cutter = TextBox(existing_box.cutter_x, existing_box.cutter_y, existing_box.cutter_width,
                              existing_box.cutter_height, None, None, None, None, None)
             img[cutter.y:cutter.y + cutter.height, cutter.x:cutter.x + cutter.width] = 1
+
+    plt.imshow(img, cmap="gray")
+    plt.show()
 
     # find possible coordinates
     y, x = np.where(img == 0)
