@@ -32,7 +32,7 @@ def get_minkowski_bounds(new_box, existing_box, img_size):
     # if there is a cutter associated with the text box to be placed, adjust the bounds accordingly
     cutter_offset = 0
     if new_box.cutter_x:
-        cutter_offset = new_box.y + new_box.height - new_box.cutter_y + new_box.cutter_height
+        cutter_offset = (new_box.cutter_y + new_box.cutter_height) - (new_box.y + new_box.height)
 
     rect = TextBox(existing_box.x - new_box.width,
                    existing_box.y - new_box.height - cutter_offset,
