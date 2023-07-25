@@ -32,9 +32,10 @@ def get_minkowski_bounds(new_box, existing_box, img_size):
 
     # if there is a cutter associated with the text box to be placed, adjust the bounds accordingly
     cutter_offset = 0
-    if new_box.cutter_x:
+    if new_box.cutter_x is not None:
         cutter_offset = (new_box.cutter_y + new_box.cutter_height) - (new_box.y + new_box.height)
 
+    # TODO: replace with deepcopy and update properties
     rect = TextBox(existing_box.x - new_box.width,
                    existing_box.y - new_box.height - cutter_offset,
                    existing_box.width + new_box.width,
@@ -43,7 +44,12 @@ def get_minkowski_bounds(new_box, existing_box, img_size):
                    existing_box.font,
                    existing_box.color,
                    existing_box.stroke_width,
-                   existing_box.stroke_color)
+                   existing_box.stroke_color,
+                   cutter_x=existing_box.cutter_x,
+                   cutter_y=existing_box.cutter_y,
+                   cutter_width=existing_box.cutter_width,
+                   cutter_height=existing_box.cutter_height,
+                   cutter_color=existing_box.cutter_color)
 
     # clamp bounds
     if rect.x < 0:
@@ -80,10 +86,12 @@ def get_position(new_box, existing_boxes, img_size):
         img[collider.y:collider.y + collider.height, collider.x:collider.x + collider.width] = 1
 
         # if there is a cutter associated with the current existing text box, remove the relevant points from options
-        if collider.cutter_x:
+        if collider.cutter_x is not None:
+            print("Cutter X: ", collider.cutter_x)
+            print("Cutter height: ", collider.cutter_height)
             cutter = TextBox(existing_box.cutter_x, existing_box.cutter_y, existing_box.cutter_width,
                              existing_box.cutter_height, None, None, None, None, None)
-            img[cutter.y:cutter.y + cutter.height, cutter.x:cutter.x + cutter.width] = 1
+            img[cutter.y:cutter.y + cutter.height, cutter.x:cutter.x + cutter.width] = 0.5
 
     plt.imshow(img, cmap="gray")
     plt.show()
