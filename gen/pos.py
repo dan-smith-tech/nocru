@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import copy
 
@@ -87,14 +86,9 @@ def get_position(new_box, existing_boxes, img_size):
 
         # if there is a cutter associated with the current existing text box, remove the relevant points from options
         if collider.cutter_x is not None:
-            print("Cutter X: ", collider.cutter_x)
-            print("Cutter height: ", collider.cutter_height)
             cutter = TextBox(existing_box.cutter_x, existing_box.cutter_y, existing_box.cutter_width,
                              existing_box.cutter_height, None, None, None, None, None)
             img[cutter.y:cutter.y + cutter.height, cutter.x:cutter.x + cutter.width] = 0.5
-
-    plt.imshow(img, cmap="gray")
-    plt.show()
 
     # find possible coordinates
     y, x = np.where(img == 0)

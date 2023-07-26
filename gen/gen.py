@@ -245,5 +245,4 @@ def init():
 
 
 if __name__ == "__main__":
-    # init()
-    generate_dataset(60, "test-dan", begin=0, threads=12)
+    init()
