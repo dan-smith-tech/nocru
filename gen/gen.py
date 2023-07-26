@@ -187,6 +187,7 @@ def generate_image():
 
         # if the text fits on the image somewhere, place it
         if new_box.x > -1 and new_box.y > -1:
+            draw.rectangle((new_box.x, new_box.y, new_box.x + new_box.width, new_box.y + new_box.height), fill="red", outline=None, width=1)
             draw.text((new_box.x, new_box.y), new_box.text, font=new_box.font, fill=new_box.color,
                       stroke_width=new_box.stroke_width, stroke_fill=new_box.stroke_color)
             # change FreeTypeFont to (name, weight) of font
