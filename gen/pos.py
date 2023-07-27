@@ -3,7 +3,7 @@ import copy
 
 
 class TextBox(object):
-    def __init__(self, x, y, width, height, text, font, color, stroke_width, stroke_color,
+    def __init__(self, x, y, width, height, text=None, font=None, color=None, stroke_width=None, stroke_color=None,
                  cutter_x=None, cutter_y=None, cutter_width=None, cutter_height=None, cutter_color=None):
         self.x = x
         self.y = y
@@ -44,9 +44,9 @@ def get_minkowski_bounds(new_box, existing_box, img_size):
     # if there is a cutter, minkowski it too
     if existing_box.cutter_x is not None:
         rect.cutter_x -= new_box.width
-        rect.cutter_y -= new_box.height
+        rect.cutter_y -= new_box.height - cutter_offset
         rect.cutter_width += new_box.width
-        rect.cutter_height += new_box.height
+        rect.cutter_height += new_box.height + cutter_offset
 
     # clamp bounds
     if rect.x < 0:
@@ -75,8 +75,8 @@ def get_position(new_box, existing_boxes, img_size):
     boxes = copy.copy(existing_boxes)
 
     # pad image size
-    boxes.append(TextBox(0, img_size[1], img_size[0], new_box.height, None, None, None, None, None))
-    boxes.append(TextBox(img_size[0], 0, new_box.width, img_size[1], None, None, None, None, None))
+    boxes.append(TextBox(0, img_size[1], img_size[0], new_box.height))
+    boxes.append(TextBox(img_size[0], 0, new_box.width, img_size[1]))
 
     for existing_box in boxes:
         collider = get_minkowski_bounds(new_box, existing_box, img_size)
@@ -85,7 +85,7 @@ def get_position(new_box, existing_boxes, img_size):
         # if there is a cutter associated with the current existing text box, remove the relevant points from options
         if collider.cutter_x is not None:
             cutter = TextBox(existing_box.cutter_x, existing_box.cutter_y, existing_box.cutter_width,
-                             existing_box.cutter_height, None, None, None, None, None)
+                             existing_box.cutter_height)
             img[cutter.y:(cutter.y + cutter.height), cutter.x:(cutter.x + cutter.width)] = 1
 
     # find possible coordinates
