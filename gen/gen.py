@@ -143,6 +143,9 @@ def create_textbox(existing_boxes, draw, img_size):
     font, sentence = get_text(draw, img_size)
 
     left, top, width, height = draw.textbbox((0, 0), sentence, font=font, anchor="la")
+
+    height += top
+    width += left
     
     #Dheight will always be a negative value
     Dleft, Dtop, Dwidth, Dheight = draw.textbbox((0, 0), sentence, font=font, anchor="ld")
