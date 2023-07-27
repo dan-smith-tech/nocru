@@ -32,7 +32,7 @@ def get_minkowski_bounds(new_box, existing_box, img_size):
     # if there is a cutter associated with the text box to be placed, adjust the bounds accordingly
     cutter_offset = 0
     if new_box.cutter_x is not None:
-        cutter_offset = (new_box.cutter_y + new_box.cutter_height) - (new_box.y + new_box.height)
+        cutter_offset = max((new_box.cutter_y + new_box.cutter_height) - (new_box.y + new_box.height), 0)
 
     # TODO: replace with deepcopy and update properties
     rect = TextBox(existing_box.x - new_box.width,
@@ -49,6 +49,12 @@ def get_minkowski_bounds(new_box, existing_box, img_size):
                    cutter_width=existing_box.cutter_width,
                    cutter_height=existing_box.cutter_height,
                    cutter_color=existing_box.cutter_color)
+    
+    if existing_box.cutter_x is not None:
+        rect.cutter_x -= new_box.width
+        rect.cutter_y -= new_box.height
+        rect.cutter_width += new_box.width
+        rect.cutter_height += new_box.height
 
     # clamp bounds
     if rect.x < 0:
@@ -88,7 +94,7 @@ def get_position(new_box, existing_boxes, img_size):
         if collider.cutter_x is not None:
             cutter = TextBox(existing_box.cutter_x, existing_box.cutter_y, existing_box.cutter_width,
                              existing_box.cutter_height, None, None, None, None, None)
-            img[cutter.y:cutter.y + cutter.height, cutter.x:cutter.x + cutter.width] = 0.5
+            img[cutter.y:(cutter.y + cutter.height), cutter.x:(cutter.x + cutter.width)] = 1
 
     # find possible coordinates
     y, x = np.where(img == 0)
