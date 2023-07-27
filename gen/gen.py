@@ -144,8 +144,8 @@ def create_textbox(existing_boxes, draw, img_size):
 
     left, top, width, height = draw.textbbox((0, 0), sentence, font=font, anchor="la")
 
-    height += top
-    width += left
+    # height += top
+    # width += left
     
     #Dheight will always be a negative value
     Dleft, Dtop, Dwidth, Dheight = draw.textbbox((0, 0), sentence, font=font, anchor="ld")
@@ -158,7 +158,7 @@ def create_textbox(existing_boxes, draw, img_size):
     # 50% chance to add an overlap box
     if np.random.randint(0, 2):
         new_box.cutter_x = new_box.x
-        new_box.cutter_y = new_box.y + new_box.height - np.random.randint(5, 10) + Dheight
+        new_box.cutter_y = new_box.y + new_box.height - np.random.randint(5, 10)
         new_box.cutter_width = new_box.width
         new_box.cutter_height = np.random.randint(10, 50)
         new_box.cutter_color = random.choice([0, 255])

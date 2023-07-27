@@ -46,9 +46,9 @@ def get_minkowski_bounds(new_box, existing_box, img_size):
     # if there is a cutter, minkowski it too
     if existing_box.cutter_x is not None:
         rect.cutter_x -= new_box.width
-        rect.cutter_y -= new_box.height - cutter_offset
+        # rect.cutter_y -= new_box.height
         rect.cutter_width += new_box.width
-        rect.cutter_height += new_box.height + cutter_offset
+        # rect.cutter_height += new_box.height
 
     # clamp bounds
     if rect.x < 0:
