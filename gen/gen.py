@@ -60,21 +60,21 @@ class GeneratorFTP(multiprocessing.Process):
             _, image_buffer = cv2.imencode('.png', np.array(new_image))
             image_buffer_io = io.BytesIO(image_buffer)
 
-            label = {
-                "id": i,
-                "text_boxes": [box.__dict__ for box in text_boxes]
-            }
+            # label = {
+            #     "id": i,
+            #     "text_boxes": [box.__dict__ for box in text_boxes]
+            # }
 
-            label_json = json.dumps(label, cls=NpTypeEncoder, ensure_ascii=False, indent=4).encode()
+            # label_json = json.dumps(label, cls=NpTypeEncoder, ensure_ascii=False, indent=4).encode()
 
             # convert json label to byte buffer
-            label_json_buffer_io = io.BytesIO(label_json)
+            # label_json_buffer_io = io.BytesIO(label_json)
 
             session.storbinary('STOR ' + str(i) + ".png", image_buffer_io)
-            session.storbinary('STOR ' + str(i) + ".json", label_json_buffer_io)
+            # session.storbinary('STOR ' + str(i) + ".json", label_json_buffer_io)
             # close IO buffers
             image_buffer_io.close()
-            label_json_buffer_io.close()
+            # label_json_buffer_io.close()
         session.quit()
 
 
@@ -179,15 +179,15 @@ def generate_image():
     """
 
     # hardcoded image properties that match scaling of other features (e.g., font size)
-    img_size = (1920, 1080)
-    noise_scale = (27, 48)
+    img_size = (1920, 150)
+    noise_scale = (10, 48)
 
     noise = (generate_perlin_noise_2d((img_size[1], img_size[0]), noise_scale) * 255).astype(np.uint8)
     img = Image.fromarray(noise)
     draw = ImageDraw.Draw(img)
     text_boxes = []
 
-    for i in range(random.randrange(8)):
+    for i in range(2): # random.randrange(8)):
         new_box = create_textbox(text_boxes, draw, img_size)
 
         # if the text fits on the image somewhere, place it
@@ -251,6 +251,5 @@ def init():
 
 
 if __name__ == "__main__":
-    init()
-
-    # , features=["aalt","abvf","abvm","abvs","afrc","blwf","blwm","blws","calt","ccmp","cfar","chws","cjct","clig","cpct","cpsp","cswh","curs","c2pc","c2sc","dist","dlig","dnom","dtls","expt","falt","fin2","fin3","fina","flac","frac","fwid","half","haln","hist","hkna","hlig","hngl","hojo","hwid","init","isol","ital","jalt","kern","lfbd","liga","ljmo","lnum","locl","ltra","ltrm","mark","med2","medi","mgrk","mkmk","mset","nalt","nlck","nukt","onum","opbd","ordn","ornm","palt","pcap","pkna","pnum","pref","pres","pstf","psts","pwid","qwid","rand","rclt","rkrf","rlig","rphf","rtbd","rtla","rtlm","ruby","rvrn","salt","sinf","size","smcp","smpl","ssty","stch","subs","sups","swsh","titl","tjmo","tnam","tnum","trad","twid","unic","valt","vatu","vchw","vert","vhal","vjmo","vkna","vkrn","vpal","vrt2","vrtr","zero"]
+    # init()
+    generate_dataset(1, "test-dan", begin=0, threads=1)

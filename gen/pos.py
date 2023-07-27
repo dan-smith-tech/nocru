@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import numpy as np
 import copy
 
@@ -33,6 +34,7 @@ def get_minkowski_bounds(new_box, existing_box, img_size):
     cutter_offset = 0
     if new_box.cutter_x is not None:
         cutter_offset = max((new_box.cutter_y + new_box.cutter_height) - (new_box.y + new_box.height), 0)
+    print(cutter_offset)
 
     # adjust position and size to account for bounds
     rect = copy.copy(existing_box)
@@ -84,9 +86,13 @@ def get_position(new_box, existing_boxes, img_size):
 
         # if there is a cutter associated with the current existing text box, remove the relevant points from options
         if collider.cutter_x is not None:
-            cutter = TextBox(existing_box.cutter_x, existing_box.cutter_y, existing_box.cutter_width,
-                             existing_box.cutter_height)
-            img[cutter.y:(cutter.y + cutter.height), cutter.x:(cutter.x + cutter.width)] = 1
+            img[collider.cutter_y:collider.cutter_y + collider.cutter_height,
+                collider.cutter_x:collider.cutter_x + collider.cutter_width] = 1
+
+    plt.imshow(img, cmap="gray")
+    plt.show()
+
+    # ISSUE: occurs when a textbox with a cutter is placed (the cutter is not taken into account)
 
     # find possible coordinates
     y, x = np.where(img == 0)
