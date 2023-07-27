@@ -123,8 +123,8 @@ def get_text(draw, img_size):
 
     font = ImageFont.FreeTypeFont("fonts/" + random.choice(os.listdir("fonts/")), np.random.randint(50, 100))
 
-    if (draw.textbbox((0, 0), sentence, font=font, anchor="lt")[2] > img_size[0] or
-            draw.textbbox((0, 0), sentence, font=font, anchor="lt")[3] > img_size[1]):
+    if (draw.textbbox((0, 0), sentence, font=font, anchor="la")[2] > img_size[0] or
+            draw.textbbox((0, 0), sentence, font=font, anchor="la")[3] > img_size[1]):
         return get_text(draw, img_size)
 
     return font, sentence
@@ -142,7 +142,7 @@ def create_textbox(existing_boxes, draw, img_size):
 
     font, sentence = get_text(draw, img_size)
 
-    left, top, width, height = draw.textbbox((0, 0), sentence, font=font, anchor="lt")
+    left, top, width, height = draw.textbbox((0, 0), sentence, font=font, anchor="la", features=["aalt","abvf","abvm","abvs","afrc","blwf","blwm","blws","calt","ccmp","cfar","chws","cjct","clig","cpct","cpsp","cswh","curs","c2pc","c2sc","dist","dlig","dnom","dtls","expt","falt","fin2","fin3","fina","flac","frac","fwid","half","haln","hist","hkna","hlig","hngl","hojo","hwid","init","isol","ital","jalt","kern","lfbd","liga","ljmo","lnum","locl","ltra","ltrm","mark","med2","medi","mgrk","mkmk","mset","nalt","nlck","nukt","onum","opbd","ordn","ornm","palt","pcap","pkna","pnum","pref","pres","pstf","psts","pwid","qwid","rand","rclt","rkrf","rlig","rphf","rtbd","rtla","rtlm","ruby","rvrn","salt","sinf","size","smcp","smpl","ssty","stch","subs","sups","swsh","titl","tjmo","tnam","tnum","trad","twid","unic","valt","vatu","vchw","vert","vhal","vjmo","vkna","vkrn","vpal","vrt2","vrtr","zero"])
     color, stroke_color = random.sample([0, 255], 2)
     stroke_width = random.choice([2, 6])
     new_box = TextBox(0, 0, width, height, sentence, font, color, stroke_width, stroke_color)
@@ -187,7 +187,14 @@ def generate_image():
 
         # if the text fits on the image somewhere, place it
         if new_box.x > -1 and new_box.y > -1:
-            draw.rectangle((new_box.x, new_box.y, new_box.x + new_box.width, new_box.y + new_box.height), fill="red", outline=None, width=1)
+
+            left, top, width, height = draw.textbbox((0, 0), new_box.text, font=new_box.font, anchor="la")
+
+            Dleft, Dtop, Dwidth, Dheight = draw.textbbox((0, 0), new_box.text, font=new_box.font, anchor="ld")
+
+            height = height - Dheight
+            
+            draw.rectangle((new_box.x, new_box.y, new_box.x + width, new_box.y + height), fill="Red", outline=None, width=1)
             draw.text((new_box.x, new_box.y), new_box.text, font=new_box.font, fill=new_box.color,
                       stroke_width=new_box.stroke_width, stroke_fill=new_box.stroke_color)
             # change FreeTypeFont to (name, weight) of font
@@ -247,3 +254,5 @@ def init():
 
 if __name__ == "__main__":
     init()
+
+    # , features=["aalt","abvf","abvm","abvs","afrc","blwf","blwm","blws","calt","ccmp","cfar","chws","cjct","clig","cpct","cpsp","cswh","curs","c2pc","c2sc","dist","dlig","dnom","dtls","expt","falt","fin2","fin3","fina","flac","frac","fwid","half","haln","hist","hkna","hlig","hngl","hojo","hwid","init","isol","ital","jalt","kern","lfbd","liga","ljmo","lnum","locl","ltra","ltrm","mark","med2","medi","mgrk","mkmk","mset","nalt","nlck","nukt","onum","opbd","ordn","ornm","palt","pcap","pkna","pnum","pref","pres","pstf","psts","pwid","qwid","rand","rclt","rkrf","rlig","rphf","rtbd","rtla","rtlm","ruby","rvrn","salt","sinf","size","smcp","smpl","ssty","stch","subs","sups","swsh","titl","tjmo","tnam","tnum","trad","twid","unic","valt","vatu","vchw","vert","vhal","vjmo","vkna","vkrn","vpal","vrt2","vrtr","zero"]
