@@ -53,6 +53,7 @@ class GeneratorFTP(multiprocessing.Process):
     def run(self):
         session = ftplib.FTP(self.address, self.username, self.password)
         session.cwd(self.directory)
+
         for i in range(self.begin, self.begin + self.size):
             new_image, text_boxes = generate_image()
 
@@ -60,21 +61,23 @@ class GeneratorFTP(multiprocessing.Process):
             _, image_buffer = cv2.imencode('.png', np.array(new_image))
             image_buffer_io = io.BytesIO(image_buffer)
 
-            # label = {
-            #     "id": i,
-            #     "text_boxes": [box.__dict__ for box in text_boxes]
-            # }
+            label = {
+                "id": i,
+                "text_boxes": [box.__dict__ for box in text_boxes]
+            }
 
-            # label_json = json.dumps(label, cls=NpTypeEncoder, ensure_ascii=False, indent=4).encode()
+            label_json = json.dumps(label, cls=NpTypeEncoder, ensure_ascii=False, indent=4).encode()
 
             # convert json label to byte buffer
-            # label_json_buffer_io = io.BytesIO(label_json)
+            label_json_buffer_io = io.BytesIO(label_json)
 
             session.storbinary('STOR ' + str(i) + ".png", image_buffer_io)
-            # session.storbinary('STOR ' + str(i) + ".json", label_json_buffer_io)
+            session.storbinary('STOR ' + str(i) + ".json", label_json_buffer_io)
+
             # close IO buffers
             image_buffer_io.close()
-            # label_json_buffer_io.close()
+            label_json_buffer_io.close()
+
         session.quit()
 
 
@@ -103,7 +106,8 @@ def get_sentence():
     gen = DocumentGenerator()
 
     sentence = gen.sentence()
-    sentence = sentence.replace("–", "-").replace("—", "-").replace("—", "-").replace("'", "").replace("[", "").replace("]", "").replace("\\", "").replace("/", "")
+    sentence = sentence.replace("–", "-").replace("—", "-").replace("—", "-").replace("'", "").replace("[", "").replace(
+        "]", "").replace("\\", "").replace("/", "")
     sentence = re.sub("[\s]+", " ", sentence)
     sentence = re.sub("[^\u0020-\u007E0-9\u00A0-\u00FF$¢£¤¥₣₤₧₪₫€₹₽₿!?]", "", sentence)
 
@@ -144,23 +148,19 @@ def create_textbox(existing_boxes, draw, img_size):
 
     left, top, width, height = draw.textbbox((0, 0), sentence, font=font, anchor="la")
 
-    # height += top
-    # width += left
-    
-    #Dheight will always be a negative value
-    Dleft, Dtop, Dwidth, Dheight = draw.textbbox((0, 0), sentence, font=font, anchor="ld")
-    
-    height = height - Dheight
     color, stroke_color = random.sample([0, 255], 2)
     stroke_width = random.choice([2, 6])
     new_box = TextBox(0, 0, width, height, sentence, font, color, stroke_width, stroke_color)
 
     # 50% chance to add an overlap box
     if np.random.randint(0, 2):
+        cutter_height = np.random.randint(10, 50)  # change to percentage of text height
+        cutter_offset = np.random.randint(10, 20)  # change to percentage of cutter height
+
         new_box.cutter_x = new_box.x
-        new_box.cutter_y = new_box.y + new_box.height - np.random.randint(5, 10)
+        new_box.cutter_y = new_box.y + new_box.height - cutter_offset
         new_box.cutter_width = new_box.width
-        new_box.cutter_height = np.random.randint(10, 50)
+        new_box.cutter_height = cutter_height
         new_box.cutter_color = random.choice([0, 255])
 
     x_pos, y_pos = get_position(new_box, existing_boxes, (img_size[0], img_size[1]))
@@ -182,20 +182,19 @@ def generate_image():
     """
 
     # hardcoded image properties that match scaling of other features (e.g., font size)
-    img_size = (1920, 150)
-    noise_scale = (10, 48)
+    img_size = (1920, 1080)
+    noise_scale = (27, 48)
 
     noise = (generate_perlin_noise_2d((img_size[1], img_size[0]), noise_scale) * 255).astype(np.uint8)
     img = Image.fromarray(noise)
     draw = ImageDraw.Draw(img)
     text_boxes = []
 
-    for i in range(2): # random.randrange(8)):
+    for i in range(random.randrange(8)):
         new_box = create_textbox(text_boxes, draw, img_size)
 
         # if the text fits on the image somewhere, place it
         if new_box.x > -1 and new_box.y > -1:
-            draw.rectangle((new_box.x, new_box.y, new_box.x + new_box.width, new_box.y + new_box.height), fill="Red", outline=None, width=1)
             draw.text((new_box.x, new_box.y), new_box.text, font=new_box.font, fill=new_box.color,
                       stroke_width=new_box.stroke_width, stroke_fill=new_box.stroke_color)
             # change FreeTypeFont to (name, weight) of font
@@ -207,12 +206,14 @@ def generate_image():
                                 new_box.cutter_y + new_box.cutter_height),
                                fill=new_box.cutter_color, outline=None, width=1)
             text_boxes.append(new_box)
+
     return img, text_boxes
 
 
 def generate_dataset(size, directory, begin=0, threads=6):
     """
     :param size: Integer quantity of images to generate
+    :param directory: String of subdirectory to store images in
     :param begin: Integer index to begin generating at
     :param threads: Integer quantity of threads to use
     """
@@ -254,5 +255,4 @@ def init():
 
 
 if __name__ == "__main__":
-    # init()
-    generate_dataset(1, "test-dan", begin=0, threads=1)
+    init()
