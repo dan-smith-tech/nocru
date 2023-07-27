@@ -34,22 +34,14 @@ def get_minkowski_bounds(new_box, existing_box, img_size):
     if new_box.cutter_x is not None:
         cutter_offset = max((new_box.cutter_y + new_box.cutter_height) - (new_box.y + new_box.height), 0)
 
-    # TODO: replace with deepcopy and update properties
-    rect = TextBox(existing_box.x - new_box.width,
-                   existing_box.y - new_box.height - cutter_offset,
-                   existing_box.width + new_box.width,
-                   existing_box.height + new_box.height + cutter_offset,
-                   existing_box.text,
-                   existing_box.font,
-                   existing_box.color,
-                   existing_box.stroke_width,
-                   existing_box.stroke_color,
-                   cutter_x=existing_box.cutter_x,
-                   cutter_y=existing_box.cutter_y,
-                   cutter_width=existing_box.cutter_width,
-                   cutter_height=existing_box.cutter_height,
-                   cutter_color=existing_box.cutter_color)
-    
+    # adjust position and size to account for bounds
+    rect = copy.copy(existing_box)
+    rect.x -= new_box.width
+    rect.y -= new_box.height - cutter_offset
+    rect.width += new_box.width
+    rect.height += new_box.height + cutter_offset
+
+    # if there is a cutter, minkowski it too
     if existing_box.cutter_x is not None:
         rect.cutter_x -= new_box.width
         rect.cutter_y -= new_box.height
