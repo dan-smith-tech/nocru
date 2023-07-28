@@ -1,0 +1,81 @@
+{
+    "id": 5,
+    "text_boxes": [
+        {
+            "x": 9,
+            "y": 605,
+            "width": 1768,
+            "height": 67,
+            "text": "As hydrostatics, exist only as data represents values attributed to the",
+            "font": [
+                "Blockletter",
+                "Regular"
+            ],
+            "color": 0,
+            "stroke_width": 2,
+            "stroke_color": 255,
+            "cutter_x": 9,
+            "cutter_y": 665,
+            "cutter_width": 1768,
+            "cutter_height": 15,
+            "cutter_color": 0
+        },
+        {
+            "x": 372,
+            "y": 412,
+            "width": 1520,
+            "height": 55,
+            "text": "An armistice the hadalpelagic. This lies between latitudes 49°30 and",
+            "font": [
+                "Berlin Sans FB Demi",
+                "Bold"
+            ],
+            "color": 0,
+            "stroke_width": 6,
+            "stroke_color": 255,
+            "cutter_x": 372,
+            "cutter_y": 457,
+            "cutter_width": 1520,
+            "cutter_height": 8,
+            "cutter_color": 0
+        },
+        {
+            "x": 792,
+            "y": 821,
+            "width": 745,
+            "height": 72,
+            "text": "And reach casino operator",
+            "font": [
+                "Blockletter",
+                "Regular"
+            ],
+            "color": 0,
+            "stroke_width": 2,
+            "stroke_color": 255,
+            "cutter_x": 792,
+            "cutter_y": 883,
+            "cutter_width": 745,
+            "cutter_height": 11,
+            "cutter_color": 0
+        },
+        {
+            "x": 33,
+            "y": 917,
+            "width": 1663,
+            "height": 102,
+            "text": "Areas open W, the westernmost is within",
+            "font": [
+                "Arial",
+                "Regular"
+            ],
+            "color": 0,
+            "stroke_width": 6,
+            "stroke_color": 255,
+            "cutter_x": 33,
+            "cutter_y": 1002,
+            "cutter_width": 1663,
+            "cutter_height": 24,
+            "cutter_color": 0
+        }
+    ]
+}
