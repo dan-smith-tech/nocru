@@ -109,7 +109,6 @@ def get_sentence():
     # .replace("'", "").replace("[", "").replace("]", "").replace("\\", "").replace("/", "")
     sentence = re.sub("[\s]+", " ", sentence)
     sentence = re.sub("[^\u0020-\u007E0-9\u00A0-\u00FF$¢£¤¥₣₤₧₪₫€₹₽₿!?]", "", sentence)
-    sentence = sentence + "[] /\ '"
 
     return sentence
 
