@@ -154,8 +154,10 @@ def create_textbox(existing_boxes, draw, img_size):
 
     # 50% chance to add an overlap box
     if np.random.randint(0, 2):
-        cutter_height = np.random.randint(10, 50)  # change to percentage of text height
-        cutter_offset = np.random.randint(10, 20)  # change to percentage of cutter height
+        # cutter_height = np.random.randint(10, 50)  # change to percentage of text height
+        cutter_height = np.random.randint(round(new_box.height * 0.15), round(new_box.height * 0.3))
+        # cutter_offset = np.random.randint(10, 20)  # change to percentage of cutter height
+        cutter_offset = np.random.randint(round(new_box.height * 0.1), round(new_box.height * 0.2))
 
         new_box.cutter_x = new_box.x
         new_box.cutter_y = new_box.y + new_box.height - cutter_offset
