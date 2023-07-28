@@ -16,7 +16,6 @@ import os
 from pos import get_position
 from pos import TextBox
 
-
 class Generator(multiprocessing.Process):
     def __init__(self, thread_id, size, begin, directory):
         multiprocessing.Process.__init__(self)
@@ -106,10 +105,11 @@ def get_sentence():
     gen = DocumentGenerator()
 
     sentence = gen.sentence()
-    sentence = sentence.replace("–", "-").replace("—", "-").replace("—", "-").replace("'", "").replace("[", "").replace(
-        "]", "").replace("\\", "").replace("/", "")
+    sentence = sentence.replace("–", "-").replace("—", "-").replace("—", "-")
+    # .replace("'", "").replace("[", "").replace("]", "").replace("\\", "").replace("/", "")
     sentence = re.sub("[\s]+", " ", sentence)
     sentence = re.sub("[^\u0020-\u007E0-9\u00A0-\u00FF$¢£¤¥₣₤₧₪₫€₹₽₿!?]", "", sentence)
+    sentence = sentence + "[] /\ '"
 
     return sentence
 
@@ -154,9 +154,7 @@ def create_textbox(existing_boxes, draw, img_size):
 
     # 50% chance to add an overlap box
     if np.random.randint(0, 2):
-        # cutter_height = np.random.randint(10, 50)  # change to percentage of text height
         cutter_height = np.random.randint(round(new_box.height * 0.15), round(new_box.height * 0.3))
-        # cutter_offset = np.random.randint(10, 20)  # change to percentage of cutter height
         cutter_offset = np.random.randint(round(new_box.height * 0.1), round(new_box.height * 0.2))
 
         new_box.cutter_x = new_box.x
