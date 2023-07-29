@@ -25,6 +25,10 @@ class NpTypeEncoder(json.JSONEncoder):
 
 
 class Generator(multiprocessing.Process):
+    """
+    Thread that generates a random image.
+    """
+
     def __init__(self, thread_id, size, begin, directory):
         multiprocessing.Process.__init__(self)
         self.thread_id = thread_id
@@ -45,6 +49,10 @@ class Generator(multiprocessing.Process):
 
 
 class LocalGenerator(Generator):
+    """
+     Thread that generates a random image and stores it locally.
+    """
+
     def __init__(self, thread_id, size, begin, directory):
         super().__init__(thread_id, size, begin, directory)
 
@@ -61,6 +69,10 @@ class LocalGenerator(Generator):
 
 
 class FTPGenerator(Generator):
+    """
+    Thread that generates a random image and stores it on a remote file system (via FTP).
+    """
+
     def __init__(self, thread_id, size, begin, directory):
         super().__init__(thread_id, size, begin, directory)
         self.address = config("FILESYSTEM_ADDRESS")

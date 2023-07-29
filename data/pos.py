@@ -3,6 +3,10 @@ import copy
 
 
 class TextBox(object):
+    """
+    Store position and content data of text to be placed on an image.
+    """
+
     def __init__(self, x, y, width, height, text=None, font=None, color=None, stroke_width=None, stroke_color=None,
                  cutter_x=None, cutter_y=None, cutter_width=None, cutter_height=None, cutter_color=None):
         self.x = x
