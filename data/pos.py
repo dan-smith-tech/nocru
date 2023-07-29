@@ -3,7 +3,11 @@ import copy
 
 
 class TextBox(object):
-    def __init__(self, x, y, width, height, text, font, color, stroke_width, stroke_color,
+    """
+    Store position and content data of text to be placed on an image.
+    """
+
+    def __init__(self, x, y, width, height, text=None, font=None, color=None, stroke_width=None, stroke_color=None,
                  cutter_x=None, cutter_y=None, cutter_width=None, cutter_height=None, cutter_color=None):
         self.x = x
         self.y = y
@@ -31,18 +35,22 @@ def get_minkowski_bounds(new_box, existing_box, img_size):
 
     # if there is a cutter associated with the text box to be placed, adjust the bounds accordingly
     cutter_offset = 0
-    if new_box.cutter_x:
-        cutter_offset = new_box.y + new_box.height - new_box.cutter_y + new_box.cutter_height
+    if new_box.cutter_x is not None:
+        cutter_offset = max((new_box.cutter_y + new_box.cutter_height) - (new_box.y + new_box.height), 0)
 
-    rect = TextBox(existing_box.x - new_box.width,
-                   existing_box.y - new_box.height - cutter_offset,
-                   existing_box.width + new_box.width,
-                   existing_box.height + new_box.height + cutter_offset,
-                   existing_box.text,
-                   existing_box.font,
-                   existing_box.color,
-                   existing_box.stroke_width,
-                   existing_box.stroke_color)
+    # adjust position and size to account for bounds
+    rect = copy.copy(existing_box)
+    rect.x -= new_box.width
+    rect.y -= new_box.height + cutter_offset
+    rect.width += new_box.width
+    rect.height += new_box.height + cutter_offset
+
+    # if there is a cutter, minkowski it too
+    if existing_box.cutter_x is not None:
+        rect.cutter_x -= new_box.width
+        rect.cutter_y -= new_box.height
+        rect.cutter_width += new_box.width
+        rect.cutter_height += new_box.height
 
     # clamp bounds
     if rect.x < 0:
@@ -71,18 +79,17 @@ def get_position(new_box, existing_boxes, img_size):
     boxes = copy.copy(existing_boxes)
 
     # pad image size
-    boxes.append(TextBox(0, img_size[1], img_size[0], new_box.height, None, None, None, None, None))
-    boxes.append(TextBox(img_size[0], 0, new_box.width, img_size[1], None, None, None, None, None))
+    boxes.append(TextBox(0, img_size[1], img_size[0], new_box.height))
+    boxes.append(TextBox(img_size[0], 0, new_box.width, img_size[1]))
 
     for existing_box in boxes:
         collider = get_minkowski_bounds(new_box, existing_box, img_size)
         img[collider.y:collider.y + collider.height, collider.x:collider.x + collider.width] = 1
 
         # if there is a cutter associated with the current existing text box, remove the relevant points from options
-        if collider.cutter_x:
-            cutter = TextBox(existing_box.cutter_x, existing_box.cutter_y, existing_box.cutter_width,
-                             existing_box.cutter_height, None, None, None, None, None)
-            img[cutter.y:cutter.y + cutter.height, cutter.x:cutter.x + cutter.width] = 1
+        if collider.cutter_x is not None:
+            img[collider.cutter_y:collider.cutter_y + collider.cutter_height,
+                collider.cutter_x:collider.cutter_x + collider.cutter_width] = 1
 
     # find possible coordinates
     y, x = np.where(img == 0)
