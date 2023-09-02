@@ -1,6 +1,7 @@
 essential_generators==1.0
 numpy==1.23.5
 opencv_python==4.7.0.72
-perlin_numpy @ git+https://github.com/pvigier/perlin-numpy
+paramiko==3.3.1
+perlin_numpy==0.0.0
 Pillow==10.0.0
 python-decouple==3.8

@@ -1,7 +1,7 @@
 from decouple import config
 import multiprocessing
 import numpy as np
-import ftplib
+import paramiko
 import json
 import cv2
 import io
@@ -76,15 +76,19 @@ class FTPGenerator(Generator):
     def __init__(self, thread_id, size, begin, directory):
         super().__init__(thread_id, size, begin, directory)
         self.address = config("FILESYSTEM_ADDRESS")
+        self.port = config("FILESYSTEM_PORT")
         self.username = config("FILESYSTEM_USERNAME")
         self.password = config("FILESYSTEM_PASSWORD")
 
     def run(self):
-        session = ftplib.FTP(self.address, self.username, self.password)
-        session.cwd(self.directory)
+        ssh_client = paramiko.SSHClient()
+        ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # security concerns
+        ssh_client.connect(self.address, self.port, self.username, self.password)
 
         for i in range(self.begin, self.begin + self.size):
             image, label = self.generate_image(i)
+
+            sftp = ssh_client.open_sftp()
 
             # convert Image to byte buffer
             _, image_buffer = cv2.imencode('.png', np.array(image))
@@ -97,14 +101,16 @@ class FTPGenerator(Generator):
             label_json_buffer_io = io.BytesIO(label_json)
 
             # store files on remote file system
-            session.storbinary('STOR ' + str(i) + ".png", image_buffer_io)
-            session.storbinary('STOR ' + str(i) + ".json", label_json_buffer_io)
+            sftp.putfo(image_buffer_io, self.directory + "/" + str(i) + ".png")
+            sftp.putfo(label_json_buffer_io, self.directory + "/" + str(i) + ".json")
 
             # close IO buffers
             image_buffer_io.close()
             label_json_buffer_io.close()
 
-        session.quit()
+            sftp.close()
+
+        ssh_client.close()
 
 
 def generate_dataset(generator, directory, size, begin, threads):
